@@ -1,0 +1,17 @@
+[package]
+name = "rougelike"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[dependencies]
+rltk = "0.8.7"
+specs = "0.19.0"
+specs-derive = "0.4.1"
