@@ -1,4 +1,3 @@
-use rltk::console;
 use specs::prelude::*;
 
 use crate::{
@@ -30,7 +29,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 if target_stats.hp > 0 {
                     let target_name = names.get(wants_melee.target).unwrap();
 
-                    let damage = i32::max(0, stats.power - target_stats.defense);
+                    let damage = i32::max(0, stats.power - target_stats.defense) as u32;
                     if damage == 0 {
                         let message =
                             format!("{} is unable to hurt {}", &name.name, &target_name.name);

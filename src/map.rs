@@ -29,6 +29,7 @@ impl Map {
         room_count: u8,
         min_size: u8,
         max_size: u8,
+        rng: &mut RandomNumberGenerator,
     ) -> Self {
         let map_dimensions = width as usize * height as usize;
         let tiles = vec![TileType::Wall; map_dimensions];
@@ -42,8 +43,6 @@ impl Map {
             blocked: vec![false; map_dimensions],
             tile_content: vec![Vec::new(); map_dimensions],
         };
-
-        let mut rng = RandomNumberGenerator::new();
 
         for _ in 0..room_count {
             let w = rng.range(min_size, max_size);
@@ -105,6 +104,12 @@ impl Map {
 
     pub fn index_from_xy(&self, x: u16, y: u16) -> usize {
         ((y * self.width) + x) as usize
+    }
+
+    pub fn xy_from_index(&self, idx: &usize) -> (u16, u16) {
+        let x = idx % self.width as usize;
+        let y = idx / self.width as usize;
+        (x as u16, y as u16)
     }
 
     fn is_exit_valid(&self, x: u16, y: u16) -> bool {

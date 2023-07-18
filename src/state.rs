@@ -4,7 +4,10 @@ use rltk::{GameState, Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 
 use crate::{
-    components::{CombatStats, Player, Position, Renderable, Viewshed, WantsToMelee},
+    components::{
+        CombatStats, Item, Player, Position, Renderable, Viewshed, WantsToMelee, WantsToPickupItem,
+    },
+    gamelog::GameLog,
     gui,
     map::Map,
     systems::{damage_system, Systems},
@@ -89,6 +92,9 @@ impl State {
                 VirtualKeyCode::Numpad7 | VirtualKeyCode::Q => self.try_move_player(-1, -1),
                 VirtualKeyCode::Numpad3 | VirtualKeyCode::C => self.try_move_player(1, 1),
                 VirtualKeyCode::Numpad1 | VirtualKeyCode::Z => self.try_move_player(-1, 1),
+
+                // Pickup
+                VirtualKeyCode::Numpad5 | VirtualKeyCode::S => self.pickup(),
                 _ => return RunState::AwaitingInput,
             },
         }
@@ -136,6 +142,40 @@ impl State {
                 viewshed.dirty = true;
                 player_pos.x = pos.x as i32;
                 player_pos.y = pos.y as i32;
+            }
+        }
+    }
+
+    fn pickup(&mut self) {
+        let player_pos = self.ecs.fetch::<Point>();
+        let player_entity = self.ecs.fetch::<Entity>();
+        let entities = self.ecs.entities();
+        let items = self.ecs.read_storage::<Item>();
+        let positions = self.ecs.read_storage::<Position>();
+        let mut gamelog = self.ecs.fetch_mut::<GameLog>();
+
+        let mut target_item: Option<Entity> = None;
+        for (item_entity, _, position) in (&entities, &items, &positions).join() {
+            if position.x as i32 == player_pos.x && position.y as i32 == player_pos.y {
+                target_item = Some(item_entity);
+            }
+        }
+
+        match target_item {
+            None => gamelog
+                .entries
+                .push("There is nothing here to pickup".to_string()),
+            Some(item) => {
+                let mut pickup = self.ecs.write_storage::<WantsToPickupItem>();
+                pickup
+                    .insert(
+                        *player_entity,
+                        WantsToPickupItem {
+                            collected_by: *player_entity,
+                            item,
+                        },
+                    )
+                    .expect("Unable to insert want to pickup");
             }
         }
     }

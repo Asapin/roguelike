@@ -38,8 +38,8 @@ pub struct BlocksTile {}
 
 #[derive(Component)]
 pub struct CombatStats {
-    pub max_hp: i32,
-    pub hp: i32,
+    pub max_hp: u32,
+    pub hp: u32,
     pub defense: i32,
     pub power: i32,
 }
@@ -51,11 +51,11 @@ pub struct WantsToMelee {
 
 #[derive(Component)]
 pub struct SufferDamage {
-    pub amount: Vec<i32>,
+    pub amount: Vec<u32>,
 }
 
 impl SufferDamage {
-    pub fn new_damage(store: &mut WriteStorage<SufferDamage>, victim: Entity, amount: i32) {
+    pub fn new_damage(store: &mut WriteStorage<SufferDamage>, victim: Entity, amount: u32) {
         if let Some(suffering) = store.get_mut(victim) {
             suffering.amount.push(amount);
         } else {
@@ -65,4 +65,40 @@ impl SufferDamage {
             store.insert(victim, dmg).expect("Unable to insert damage");
         }
     }
+}
+
+#[derive(Component)]
+pub struct Item {}
+
+#[derive(Component)]
+pub struct RestoreHealth {
+    pub amount: u32,
+}
+
+#[derive(Component)]
+pub struct InBackpack {
+    pub owner: Entity,
+}
+
+#[derive(Component)]
+pub struct WantsToPickupItem {
+    pub collected_by: Entity,
+    pub item: Entity,
+}
+
+pub fn register_components(ecs: &mut World) {
+    ecs.register::<Position>();
+    ecs.register::<Renderable>();
+    ecs.register::<Player>();
+    ecs.register::<Viewshed>();
+    ecs.register::<Monster>();
+    ecs.register::<Name>();
+    ecs.register::<BlocksTile>();
+    ecs.register::<CombatStats>();
+    ecs.register::<WantsToMelee>();
+    ecs.register::<SufferDamage>();
+    ecs.register::<Item>();
+    ecs.register::<RestoreHealth>();
+    ecs.register::<InBackpack>();
+    ecs.register::<WantsToPickupItem>();
 }
