@@ -8,6 +8,8 @@ Simple roguelike game in Rust + RLTK, based on [Roguelike Tutorial - In Rust](ht
 
 # Controls
 
+## Movement
+
 * `W` or `Num 8` - up
 * `A` or `Num 4` - left
 * `D` or `Num 6` - right
@@ -16,3 +18,8 @@ Simple roguelike game in Rust + RLTK, based on [Roguelike Tutorial - In Rust](ht
 * `E` or `Num 9` - right-up
 * `Z` or `Num 1` - left-down
 * `C` or `Num 3` - right-down
+
+## Inventory
+
+* `S` or `Num 5` - pick up items
+* `I` - open inventory
