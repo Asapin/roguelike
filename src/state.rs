@@ -5,10 +5,11 @@ use specs::prelude::*;
 
 use crate::{
     components::{
-        CombatStats, Item, Player, Position, Renderable, Viewshed, WantsToMelee, WantsToPickupItem,
+        CombatStats, Item, Player, Position, Viewshed, WantsToDrinkPotion, WantsToMelee,
+        WantsToPickupItem,
     },
     gamelog::GameLog,
-    gui,
+    gui::{self, ItemMenuResult},
     map::Map,
     systems::{damage_system, Systems},
 };
@@ -19,6 +20,7 @@ pub enum RunState {
     PreRun,
     PlayerTurn,
     MonsterTurn,
+    ShowInventory,
 }
 
 pub struct State {
@@ -28,6 +30,9 @@ pub struct State {
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
+        damage_system::delete_the_dead(&mut self.ecs);
+        gui::draw(&self.ecs, ctx);
+
         let mut new_runstate;
         {
             let runstate = self.ecs.fetch::<RunState>();
@@ -49,25 +54,26 @@ impl GameState for State {
                 self.run_systems();
                 new_runstate = RunState::AwaitingInput;
             }
+            RunState::ShowInventory => {
+                let result = gui::show_inventory(self, ctx);
+                match result {
+                    ItemMenuResult::Cancel => new_runstate = RunState::AwaitingInput,
+                    ItemMenuResult::NoResponse => {}
+                    ItemMenuResult::Selected(item) => {
+                        let mut intent = self.ecs.write_storage::<WantsToDrinkPotion>();
+                        let player_entity = self.ecs.fetch::<Entity>();
+                        intent
+                            .insert(*player_entity, WantsToDrinkPotion { potion: item })
+                            .expect("Unable to insert intent");
+                        new_runstate = RunState::PlayerTurn;
+                    }
+                }
+            }
         }
 
         {
             let mut run_writer = self.ecs.write_resource::<RunState>();
             *run_writer = new_runstate;
-        }
-        damage_system::delete_the_dead(&mut self.ecs);
-
-        gui::draw(&self.ecs, ctx);
-
-        let positions = self.ecs.read_storage::<Position>();
-        let renderables = self.ecs.read_storage::<Renderable>();
-        let map = self.ecs.fetch::<Map>();
-
-        for (pos, render) in (&positions, &renderables).join() {
-            let idx = map.index_from_xy(pos.x, pos.y);
-            if map.visible_tiles[idx] {
-                ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
-            }
         }
     }
 }
@@ -95,6 +101,9 @@ impl State {
 
                 // Pickup
                 VirtualKeyCode::Numpad5 | VirtualKeyCode::S => self.pickup(),
+
+                // Inventory
+                VirtualKeyCode::I => return RunState::ShowInventory,
                 _ => return RunState::AwaitingInput,
             },
         }

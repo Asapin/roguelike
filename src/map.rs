@@ -14,6 +14,8 @@ pub enum TileType {
 pub struct Map {
     pub width: u16,
     pub height: u16,
+    pub window_width: u16,
+    pub window_height: u16,
     pub tiles: Vec<TileType>,
     pub rooms: Vec<Rect>,
     pub revealed_tiles: Vec<bool>,
@@ -26,6 +28,8 @@ impl Map {
     pub fn new_map_rooms_and_corridors(
         width: u16,
         height: u16,
+        window_width: u16,
+        window_height: u16,
         room_count: u8,
         min_size: u8,
         max_size: u8,
@@ -36,6 +40,8 @@ impl Map {
         let mut map = Self {
             width,
             height,
+            window_width,
+            window_height,
             tiles,
             rooms: Vec::new(),
             revealed_tiles: vec![false; map_dimensions],

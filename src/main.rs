@@ -42,6 +42,8 @@ fn main() -> rltk::BError {
     let map = Map::new_map_rooms_and_corridors(
         MAP_WIDTH,
         MAP_HEIGHT,
+        80,
+        50,
         ROOM_COUNT,
         MIN_ROOM_SIZE,
         MAX_ROOM_SIZE,
@@ -55,7 +57,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(player_entity);
 
     for room in map.rooms.iter().skip(1) {
-        spawner::spawn_room(&mut gs.ecs, &map, &room, MAX_MONSTERS, MAX_ITEMS);
+        spawner::spawn_room(&mut gs.ecs, &map, room, MAX_MONSTERS, MAX_ITEMS);
     }
     gs.ecs.insert(map);
     gs.ecs.insert(GameLog {

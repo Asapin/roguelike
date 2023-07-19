@@ -3,7 +3,7 @@ use specs::prelude::*;
 
 use crate::{
     components::{
-        BlocksTile, CombatStats, Item, Monster, Name, Player, Position, Renderable, RestoreHealth,
+        BlocksTile, CombatStats, Item, Monster, Name, Player, Position, Potion, Renderable,
         Viewshed,
     },
     map::Map,
@@ -119,7 +119,7 @@ fn health_potion(ecs: &mut World, x: u16, y: u16) {
             name: "Health potion".to_string(),
         })
         .with(Item {})
-        .with(RestoreHealth { amount: 8 })
+        .with(Potion { amount: 8 })
         .build();
 }
 

@@ -71,7 +71,7 @@ impl SufferDamage {
 pub struct Item {}
 
 #[derive(Component)]
-pub struct RestoreHealth {
+pub struct Potion {
     pub amount: u32,
 }
 
@@ -86,6 +86,11 @@ pub struct WantsToPickupItem {
     pub item: Entity,
 }
 
+#[derive(Component)]
+pub struct WantsToDrinkPotion {
+    pub potion: Entity,
+}
+
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
     ecs.register::<Renderable>();
@@ -98,7 +103,8 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<WantsToMelee>();
     ecs.register::<SufferDamage>();
     ecs.register::<Item>();
-    ecs.register::<RestoreHealth>();
+    ecs.register::<Potion>();
     ecs.register::<InBackpack>();
     ecs.register::<WantsToPickupItem>();
+    ecs.register::<WantsToDrinkPotion>();
 }
