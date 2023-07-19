@@ -2,7 +2,7 @@ use rltk::RGB;
 use specs::prelude::*;
 use specs_derive::Component;
 
-#[derive(Component)]
+#[derive(Component, Clone, Copy)]
 pub struct Position {
     pub x: u16,
     pub y: u16,
@@ -13,6 +13,7 @@ pub struct Renderable {
     pub glyph: rltk::FontCharType,
     pub fg: RGB,
     pub bg: RGB,
+    pub render_order: i32,
 }
 
 #[derive(Component)]
@@ -91,6 +92,12 @@ pub struct WantsToDrinkPotion {
     pub potion: Entity,
 }
 
+#[derive(Component)]
+pub struct WantsToDropItem {
+    pub item: Entity,
+    pub position: Position,
+}
+
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
     ecs.register::<Renderable>();
@@ -107,4 +114,5 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<InBackpack>();
     ecs.register::<WantsToPickupItem>();
     ecs.register::<WantsToDrinkPotion>();
+    ecs.register::<WantsToDropItem>();
 }

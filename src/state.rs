@@ -5,8 +5,8 @@ use specs::prelude::*;
 
 use crate::{
     components::{
-        CombatStats, Item, Player, Position, Viewshed, WantsToDrinkPotion, WantsToMelee,
-        WantsToPickupItem,
+        CombatStats, Item, Player, Position, Viewshed, WantsToDrinkPotion, WantsToDropItem,
+        WantsToMelee, WantsToPickupItem,
     },
     gamelog::GameLog,
     gui::{self, ItemMenuResult},
@@ -21,6 +21,7 @@ pub enum RunState {
     PlayerTurn,
     MonsterTurn,
     ShowInventory,
+    ShowDropItem,
 }
 
 pub struct State {
@@ -55,7 +56,7 @@ impl GameState for State {
                 new_runstate = RunState::AwaitingInput;
             }
             RunState::ShowInventory => {
-                let result = gui::show_inventory(self, ctx);
+                let result = gui::inventory(self, ctx);
                 match result {
                     ItemMenuResult::Cancel => new_runstate = RunState::AwaitingInput,
                     ItemMenuResult::NoResponse => {}
@@ -64,6 +65,29 @@ impl GameState for State {
                         let player_entity = self.ecs.fetch::<Entity>();
                         intent
                             .insert(*player_entity, WantsToDrinkPotion { potion: item })
+                            .expect("Unable to insert intent");
+                        new_runstate = RunState::PlayerTurn;
+                    }
+                }
+            }
+            RunState::ShowDropItem => {
+                let result = gui::drop_item_menu(self, ctx);
+                match result {
+                    ItemMenuResult::Cancel => new_runstate = RunState::AwaitingInput,
+                    ItemMenuResult::NoResponse => {}
+                    ItemMenuResult::Selected(item) => {
+                        let mut intent = self.ecs.write_storage::<WantsToDropItem>();
+                        let player_entity = self.ecs.fetch::<Entity>();
+                        let positions = self.ecs.read_storage::<Position>();
+                        let player_position = positions.get(*player_entity).unwrap();
+                        intent
+                            .insert(
+                                *player_entity,
+                                WantsToDropItem {
+                                    item,
+                                    position: *player_position,
+                                },
+                            )
                             .expect("Unable to insert intent");
                         new_runstate = RunState::PlayerTurn;
                     }
@@ -104,6 +128,7 @@ impl State {
 
                 // Inventory
                 VirtualKeyCode::I => return RunState::ShowInventory,
+                VirtualKeyCode::R => return RunState::ShowDropItem,
                 _ => return RunState::AwaitingInput,
             },
         }

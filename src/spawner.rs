@@ -20,6 +20,7 @@ pub fn player(ecs: &mut World, player_x: u16, player_y: u16) -> Entity {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
             bg: RGB::named(rltk::BLACK),
+            render_order: 0,
         })
         .with(Player {})
         .with(Viewshed {
@@ -114,6 +115,7 @@ fn health_potion(ecs: &mut World, x: u16, y: u16) {
             glyph: rltk::to_cp437('¡'),
             fg: RGB::named(rltk::MAGENTA),
             bg: RGB::named(rltk::BLACK),
+            render_order: 2,
         })
         .with(Name {
             name: "Health potion".to_string(),
@@ -138,6 +140,7 @@ fn generic_mob(ecs: &mut World, x: u16, y: u16, glyph: rltk::FontCharType, name:
             glyph,
             fg: RGB::named(rltk::RED),
             bg: RGB::named(rltk::BLACK),
+            render_order: 1,
         })
         .with(Viewshed {
             visible_tiles: Vec::new(),

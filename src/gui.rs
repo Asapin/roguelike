@@ -66,7 +66,9 @@ fn draw_entities(ecs: &World, ctx: &mut Rltk, map: &Fetch<Map>) {
     let positions = ecs.read_storage::<Position>();
     let renderables = ecs.read_storage::<Renderable>();
 
-    for (pos, render) in (&positions, &renderables).join() {
+    let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
+    data.sort_by(|(_, render1), (_, render2)| render2.render_order.cmp(&render1.render_order));
+    for (pos, render) in data.iter() {
         let idx = map.index_from_xy(pos.x, pos.y);
         if map.visible_tiles[idx] {
             ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
@@ -217,7 +219,15 @@ fn draw_tooltip(ecs: &World, ctx: &mut Rltk, map: &Fetch<Map>) {
     }
 }
 
-pub fn show_inventory(gs: &mut State, ctx: &mut Rltk) -> ItemMenuResult {
+pub fn inventory(gs: &mut State, ctx: &mut Rltk) -> ItemMenuResult {
+    show_item_inventory(gs, ctx, "Inventory")
+}
+
+pub fn drop_item_menu(gs: &mut State, ctx: &mut Rltk) -> ItemMenuResult {
+    show_item_inventory(gs, ctx, "Drop which item?")
+}
+
+fn show_item_inventory(gs: &mut State, ctx: &mut Rltk, window_title: &str) -> ItemMenuResult {
     let player_entity = gs.ecs.fetch::<Entity>();
     let names = gs.ecs.read_storage::<Name>();
     let backpack = gs.ecs.read_storage::<InBackpack>();
@@ -243,7 +253,7 @@ pub fn show_inventory(gs: &mut State, ctx: &mut Rltk) -> ItemMenuResult {
         y - 2,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
-        "Inventory",
+        window_title,
     );
     ctx.print_color(
         18,
