@@ -1,7 +1,10 @@
 use rltk::console;
 use specs::prelude::*;
 
-use crate::components::{CombatStats, Player, SufferDamage};
+use crate::{
+    components::{CombatStats, Player, SufferDamage},
+    state::RunState,
+};
 
 pub struct DamageSystem {}
 
@@ -38,7 +41,11 @@ pub fn delete_the_dead(ecs: &mut World) {
                 let player = players.get(entity);
                 match player {
                     None => dead.push(entity),
-                    Some(_) => console::log("You are dead"),
+                    Some(_) => {
+                        console::log("You are dead");
+                        let mut run_writer = ecs.write_resource::<RunState>();
+                        *run_writer = RunState::Dead;
+                    }
                 }
             }
         }

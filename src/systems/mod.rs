@@ -2,18 +2,18 @@ use specs::{RunNow, World, WorldExt};
 
 use self::{
     damage_system::DamageSystem, inventory_system::ItemCollectionSystem,
-    item_drop_system::ItemDropSystem, map_indexing_system::MapIndexingSystem,
-    melee_combat_system::MeleeCombatSystem, monster_ai_system::MonsterAI,
-    potion_use_system::PotionUseSystem, visibility_system::VisibilitySystem,
+    item_drop_system::ItemDropSystem, item_use_system::ItemUseSystem,
+    map_indexing_system::MapIndexingSystem, melee_combat_system::MeleeCombatSystem,
+    monster_ai_system::MonsterAI, visibility_system::VisibilitySystem,
 };
 
 pub mod damage_system;
 pub mod inventory_system;
 pub mod item_drop_system;
+pub mod item_use_system;
 pub mod map_indexing_system;
 pub mod melee_combat_system;
 pub mod monster_ai_system;
-pub mod potion_use_system;
 pub mod visibility_system;
 
 pub struct Systems {
@@ -23,7 +23,7 @@ pub struct Systems {
     melee_combat: MeleeCombatSystem,
     damage_system: DamageSystem,
     item_collection: ItemCollectionSystem,
-    potion_use: PotionUseSystem,
+    potion_use: ItemUseSystem,
     item_drop: ItemDropSystem,
 }
 
@@ -36,7 +36,7 @@ impl Systems {
             melee_combat: MeleeCombatSystem {},
             damage_system: DamageSystem {},
             item_collection: ItemCollectionSystem {},
-            potion_use: PotionUseSystem {},
+            potion_use: ItemUseSystem {},
             item_drop: ItemDropSystem {},
         }
     }

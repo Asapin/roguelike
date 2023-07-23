@@ -5,11 +5,11 @@ use specs::prelude::*;
 
 use crate::{
     components::{
-        CombatStats, Item, Player, Position, Viewshed, WantsToDrinkPotion, WantsToDropItem,
-        WantsToMelee, WantsToPickupItem,
+        CombatStats, Confusion, Item, Player, Position, Ranged, Viewshed, WantsToDropItem,
+        WantsToMelee, WantsToPickupItem, WantsToUseItem,
     },
     gamelog::GameLog,
-    gui::{self, ItemMenuResult},
+    gui::{self, ItemMenuResult, TargetSelectResult},
     map::Map,
     systems::{damage_system, Systems},
 };
@@ -22,6 +22,8 @@ pub enum RunState {
     MonsterTurn,
     ShowInventory,
     ShowDropItem,
+    Dead,
+    ShowTargeting { range: u16, item: Entity },
 }
 
 pub struct State {
@@ -61,12 +63,21 @@ impl GameState for State {
                     ItemMenuResult::Cancel => new_runstate = RunState::AwaitingInput,
                     ItemMenuResult::NoResponse => {}
                     ItemMenuResult::Selected(item) => {
-                        let mut intent = self.ecs.write_storage::<WantsToDrinkPotion>();
-                        let player_entity = self.ecs.fetch::<Entity>();
-                        intent
-                            .insert(*player_entity, WantsToDrinkPotion { potion: item })
-                            .expect("Unable to insert intent");
-                        new_runstate = RunState::PlayerTurn;
+                        let ranged_storage = self.ecs.read_storage::<Ranged>();
+                        let is_item_ranged = ranged_storage.get(item);
+                        if let Some(ranged) = is_item_ranged {
+                            new_runstate = RunState::ShowTargeting {
+                                range: ranged.range,
+                                item,
+                            }
+                        } else {
+                            let mut intent = self.ecs.write_storage::<WantsToUseItem>();
+                            let player_entity = self.ecs.fetch::<Entity>();
+                            intent
+                                .insert(*player_entity, WantsToUseItem { item, target: None })
+                                .expect("Unable to insert intent");
+                            new_runstate = RunState::PlayerTurn;
+                        }
                     }
                 }
             }
@@ -93,6 +104,28 @@ impl GameState for State {
                     }
                 }
             }
+            RunState::Dead => {}
+            RunState::ShowTargeting { range, item } => {
+                let target = gui::ranged_target(self, ctx, range);
+                match target {
+                    TargetSelectResult::Cancel => new_runstate = RunState::AwaitingInput,
+                    TargetSelectResult::NoResponse => {}
+                    TargetSelectResult::Selected(position) => {
+                        let mut intent = self.ecs.write_storage::<WantsToUseItem>();
+                        let player = self.ecs.fetch::<Entity>();
+                        intent
+                            .insert(
+                                *player,
+                                WantsToUseItem {
+                                    item,
+                                    target: Some(position),
+                                },
+                            )
+                            .expect("Unable to insert intent");
+                        new_runstate = RunState::PlayerTurn;
+                    }
+                }
+            }
         }
 
         {
@@ -108,6 +141,26 @@ impl State {
     }
 
     fn player_input(&mut self, ctx: &mut Rltk) -> RunState {
+        let can_act = {
+            let player = self.ecs.fetch::<Entity>();
+            let mut confusion = self.ecs.write_storage::<Confusion>();
+            if let Some(confused) = confusion.get_mut(*player) {
+                let mut gamelog = self.ecs.fetch_mut::<GameLog>();
+                gamelog.entries.push("You are still confused".to_string());
+                confused.turns -= 1;
+                if confused.turns == 0 {
+                    confusion.remove(*player);
+                }
+                false
+            } else {
+                true
+            }
+        };
+
+        if !can_act {
+            return RunState::PlayerTurn;
+        }
+
         // Player movement
         match ctx.key {
             None => return RunState::AwaitingInput,

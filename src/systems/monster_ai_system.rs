@@ -2,7 +2,7 @@ use rltk::Point;
 use specs::prelude::*;
 
 use crate::{
-    components::{Monster, Position, Viewshed, WantsToMelee},
+    components::{Confusion, Monster, Position, Viewshed, WantsToMelee},
     map::Map,
     state::RunState,
 };
@@ -20,6 +20,7 @@ impl<'a> System<'a> for MonsterAI {
         ReadStorage<'a, Monster>,
         WriteStorage<'a, Position>,
         WriteStorage<'a, WantsToMelee>,
+        WriteStorage<'a, Confusion>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -33,6 +34,7 @@ impl<'a> System<'a> for MonsterAI {
             monster,
             mut position,
             mut wants_to_melee,
+            mut confused,
         ) = data;
 
         if *runstate != RunState::MonsterTurn {
@@ -42,6 +44,20 @@ impl<'a> System<'a> for MonsterAI {
         for (entity, mut viewshed, _monster, mut pos) in
             (&entities, &mut viewshed, &monster, &mut position).join()
         {
+            let mut can_act = true;
+            let is_confused = confused.get_mut(entity);
+            if let Some(is_confused) = is_confused {
+                is_confused.turns -= 1;
+                if is_confused.turns == 0 {
+                    confused.remove(entity);
+                }
+                can_act = false;
+            }
+
+            if !can_act {
+                return;
+            }
+
             let distance =
                 rltk::DistanceAlg::Pythagoras.distance2d(Point::new(pos.x, pos.y), *player_pos);
             if distance < 1.5 {

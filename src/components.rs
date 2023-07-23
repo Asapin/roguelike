@@ -2,7 +2,7 @@ use rltk::RGB;
 use specs::prelude::*;
 use specs_derive::Component;
 
-#[derive(Component, Clone, Copy)]
+#[derive(Component, Clone, Copy, PartialEq)]
 pub struct Position {
     pub x: u16,
     pub y: u16,
@@ -72,7 +72,7 @@ impl SufferDamage {
 pub struct Item {}
 
 #[derive(Component)]
-pub struct Potion {
+pub struct ProvidesHealing {
     pub amount: u32,
 }
 
@@ -88,14 +88,38 @@ pub struct WantsToPickupItem {
 }
 
 #[derive(Component)]
-pub struct WantsToDrinkPotion {
-    pub potion: Entity,
+pub struct WantsToUseItem {
+    pub item: Entity,
+    pub target: Option<Position>,
 }
 
 #[derive(Component)]
 pub struct WantsToDropItem {
     pub item: Entity,
     pub position: Position,
+}
+
+#[derive(Component)]
+pub struct Consumable {}
+
+#[derive(Component)]
+pub struct Ranged {
+    pub range: u16,
+}
+
+#[derive(Component)]
+pub struct InflictsDamage {
+    pub damage: u32,
+}
+
+#[derive(Component)]
+pub struct AreaOfEffect {
+    pub radius: u16,
+}
+
+#[derive(Component)]
+pub struct Confusion {
+    pub turns: u8,
 }
 
 pub fn register_components(ecs: &mut World) {
@@ -110,9 +134,14 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<WantsToMelee>();
     ecs.register::<SufferDamage>();
     ecs.register::<Item>();
-    ecs.register::<Potion>();
+    ecs.register::<ProvidesHealing>();
     ecs.register::<InBackpack>();
     ecs.register::<WantsToPickupItem>();
-    ecs.register::<WantsToDrinkPotion>();
+    ecs.register::<WantsToUseItem>();
     ecs.register::<WantsToDropItem>();
+    ecs.register::<Consumable>();
+    ecs.register::<Ranged>();
+    ecs.register::<InflictsDamage>();
+    ecs.register::<AreaOfEffect>();
+    ecs.register::<Confusion>();
 }

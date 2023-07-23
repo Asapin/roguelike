@@ -1,8 +1,8 @@
-use rltk::{Point, Rltk, VirtualKeyCode, RGB};
+use rltk::{console, Point, Rltk, VirtualKeyCode, RGB};
 use specs::{prelude::*, shred::Fetch};
 
 use crate::{
-    components::{CombatStats, InBackpack, Name, Player, Position, Renderable},
+    components::{CombatStats, InBackpack, Name, Player, Position, Renderable, Viewshed},
     gamelog::GameLog,
     map::{Map, TileType},
     state::State,
@@ -13,6 +13,13 @@ pub enum ItemMenuResult {
     Cancel,
     NoResponse,
     Selected(Entity),
+}
+
+#[derive(PartialEq)]
+pub enum TargetSelectResult {
+    Cancel,
+    NoResponse,
+    Selected(Position),
 }
 
 pub fn draw(ecs: &World, ctx: &mut Rltk) {
@@ -310,4 +317,60 @@ fn show_item_inventory(gs: &mut State, ctx: &mut Rltk, window_title: &str) -> It
             }
         },
     }
+}
+
+pub fn ranged_target(gs: &mut State, ctx: &mut Rltk, range: u16) -> TargetSelectResult {
+    let player_entity = gs.ecs.fetch::<Entity>();
+    let player_pos = gs.ecs.fetch::<Point>();
+    let viewsheds = gs.ecs.read_storage::<Viewshed>();
+
+    ctx.print_color(
+        5,
+        0,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Select Target:",
+    );
+
+    // Highlight available target cells
+    let mut available_cells = Vec::new();
+    let visible = viewsheds.get(*player_entity);
+    if let Some(visible) = visible {
+        // We have a viewshed
+        for idx in visible.visible_tiles.iter() {
+            let distance = rltk::DistanceAlg::Pythagoras.distance2d(*player_pos, *idx);
+            if distance < range as f32 {
+                ctx.set_bg(idx.x, idx.y, RGB::named(rltk::BLUE));
+                available_cells.push(idx);
+            }
+        }
+    } else {
+        console::log("Player entity doesn't have a viewshed");
+        return TargetSelectResult::Cancel;
+    }
+
+    // Draw mouse cursor
+    let mouse_pos = ctx.mouse_pos();
+    let mut valid_target = false;
+    for idx in available_cells.iter() {
+        if idx.x == mouse_pos.0 && idx.y == mouse_pos.1 {
+            valid_target = true;
+        }
+    }
+    if valid_target {
+        ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::CYAN));
+        if ctx.left_click {
+            return TargetSelectResult::Selected(Position {
+                x: mouse_pos.0 as u16,
+                y: mouse_pos.1 as u16,
+            });
+        }
+    } else {
+        ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::RED));
+        if ctx.left_click {
+            return TargetSelectResult::Cancel;
+        }
+    }
+
+    TargetSelectResult::NoResponse
 }
