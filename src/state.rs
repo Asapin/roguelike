@@ -238,8 +238,8 @@ impl State {
             }
 
             // Mark the player's visibility as dirty
-            let mut viewshed_components = self.ecs.write_storage::<Viewshed>();
-            let viewshed = viewshed_components.get_mut(*player_entity);
+            let mut viewshed_storage = self.ecs.write_storage::<Viewshed>();
+            let viewshed = viewshed_storage.get_mut(*player_entity);
             if let Some(viewshed) = viewshed {
                 viewshed.dirty = true;
             }
@@ -249,8 +249,8 @@ impl State {
             gamelog
                 .entries
                 .push("You descent to the next level, and take a moment to heal.".to_string());
-            let mut player_health_store = self.ecs.write_storage::<CombatStats>();
-            let player_health = player_health_store.get_mut(*player_entity);
+            let mut health_storage = self.ecs.write_storage::<CombatStats>();
+            let player_health = health_storage.get_mut(*player_entity);
             if let Some(player_health) = player_health {
                 player_health.hp = u32::max(player_health.hp, player_health.max_hp / 2);
             }

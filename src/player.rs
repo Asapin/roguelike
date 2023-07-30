@@ -4,7 +4,7 @@ use std::cmp::{max, min};
 
 use crate::{
     components::{
-        CombatStats, Confusion, Item, Player, Position, Viewshed, WantsToMelee, WantsToPickupItem,
+        CombatStats, Confusion, Item, Player, Position, Viewshed, WantsToMelee, WantsToPickupItem, Monster,
     },
     gamelog::GameLog,
     map::{Map, TileType},
@@ -63,6 +63,9 @@ pub fn player_input(ecs: &mut World, ctx: &mut Rltk) -> RunState {
                     return RunState::NextLevel;
                 }
             }
+
+            // Skip turn
+            VirtualKeyCode::Space => return skip_turn(ecs),
             _ => return RunState::AwaitingInput,
         },
     }
@@ -161,4 +164,36 @@ fn try_next_level(ecs: &mut World) -> bool {
             .push("There is no way down from here.".to_string());
         false
     }
+}
+
+fn skip_turn(ecs: &mut World) -> RunState {
+    let player_entity = ecs.fetch::<Entity>();
+    let viewshed_storage = ecs.read_storage::<Viewshed>();
+    let monsters = ecs.read_storage::<Monster>();
+
+    let map = ecs.fetch::<Map>();
+
+    let mut can_heal = true;
+    let viewshed = viewshed_storage.get(*player_entity).unwrap();
+    for tile in viewshed.visible_tiles.iter() {
+        let idx = map.index_from_xy(tile.x as u16, tile.y as u16);
+        for entity_id in map.tile_content[idx].iter() {
+            let mob = monsters.get(*entity_id);
+            match mob {
+                None => {},
+                Some(_) => {
+                    can_heal = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    if can_heal {
+        let mut health_storage = ecs.write_storage::<CombatStats>();
+        let player_hp = health_storage.get_mut(*player_entity).unwrap();
+        player_hp.heal(1);
+    }
+
+    RunState::PlayerTurn
 }

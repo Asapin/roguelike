@@ -92,9 +92,7 @@ impl<'a> System<'a> for ItemUseSystem {
                 for target in targets.iter() {
                     let stats = combat_stats.get_mut(*target);
                     if let Some(stats) = stats {
-                        let prev_hp = stats.hp;
-                        stats.hp = u32::min(stats.max_hp, stats.hp + healing_item.amount);
-                        let hp_diff = stats.hp - prev_hp;
+                        let hp_diff = stats.heal(healing_item.amount);
                         if entity == *player_entity {
                             gamelog.entries.push(format!(
                                 "You drink the {}, healing {} hp.",
