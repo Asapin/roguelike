@@ -33,9 +33,11 @@ pub fn draw(ecs: &World, ctx: &mut Rltk) {
 fn draw_map(ctx: &mut Rltk, map: &Fetch<Map>) {
     let floor_fg = RGB::from_f32(0.5, 0.5, 0.5);
     let wall_fg = RGB::from_f32(0.0, 1.0, 0.0);
+    let downstairs_fg = RGB::from_f32(0.0, 1.0, 1.0);
     let bg = RGB::from_f32(0., 0., 0.);
     let floor = rltk::to_cp437('.');
     let wall = rltk::to_cp437('#');
+    let downstairs = rltk::to_cp437('>');
 
     let mut y = 0;
     let mut x = 0;
@@ -52,6 +54,10 @@ fn draw_map(ctx: &mut Rltk, map: &Fetch<Map>) {
                 TileType::Wall => {
                     glyph = wall;
                     fg = wall_fg;
+                }
+                TileType::DownStairs => {
+                    glyph = downstairs;
+                    fg = downstairs_fg;
                 }
             }
             if !map.visible_tiles[idx] {
@@ -91,6 +97,14 @@ fn draw_ui(ecs: &World, ctx: &mut Rltk, map: &Fetch<Map>) {
         map.window_height - map.height - 1,
         RGB::named(rltk::WHITE),
         RGB::named(rltk::BLACK),
+    );
+    let depth = format!("Depth: {}", map.depth);
+    ctx.print_color(
+        2,
+        map.height,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        &depth,
     );
 
     let combat_stats = ecs.read_storage::<CombatStats>();

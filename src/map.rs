@@ -10,6 +10,7 @@ use crate::rect::Rect;
 pub enum TileType {
     Wall,
     Floor,
+    DownStairs,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -23,6 +24,7 @@ pub struct Map {
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
     pub blocked: Vec<bool>,
+    pub depth: u32,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -30,6 +32,26 @@ pub struct Map {
 }
 
 impl Map {
+    pub fn new_map(
+        &self,
+        room_count: u8,
+        min_size: u8,
+        max_size: u8,
+        rng: &mut RandomNumberGenerator,
+    ) -> Self {
+        Map::new_map_rooms_and_corridors(
+            self.width,
+            self.height,
+            self.window_width,
+            self.window_height,
+            room_count,
+            min_size,
+            max_size,
+            rng,
+            self.depth + 1,
+        )
+    }
+
     pub fn new_map_rooms_and_corridors(
         width: u16,
         height: u16,
@@ -39,6 +61,7 @@ impl Map {
         min_size: u8,
         max_size: u8,
         rng: &mut RandomNumberGenerator,
+        new_depth: u32,
     ) -> Self {
         let map_dimensions = width as usize * height as usize;
         let tiles = vec![TileType::Wall; map_dimensions];
@@ -53,6 +76,7 @@ impl Map {
             visible_tiles: vec![false; map_dimensions],
             blocked: vec![false; map_dimensions],
             tile_content: vec![Vec::new(); map_dimensions],
+            depth: new_depth,
         };
 
         for _ in 0..room_count {
@@ -82,6 +106,10 @@ impl Map {
                 map.rooms.push(new_room);
             }
         }
+
+        let stairs_position = map.rooms[map.rooms.len() - 1].center();
+        let stairs_idx = map.index_from_xy(stairs_position.0, stairs_position.1);
+        map.tiles[stairs_idx] = TileType::DownStairs;
 
         map
     }

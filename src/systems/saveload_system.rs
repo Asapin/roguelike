@@ -10,6 +10,7 @@ use specs::{
 };
 use specs::{Entity, Join};
 
+use crate::state::{MAP_HEIGHT, MAP_WIDTH};
 use crate::{
     components::{
         AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, InBackpack, InflictsDamage,
@@ -19,7 +20,6 @@ use crate::{
     },
     map::Map,
 };
-use crate::{MAP_HEIGHT, MAP_WIDTH};
 
 const SAVE_FILE: &str = "./savegame.json";
 

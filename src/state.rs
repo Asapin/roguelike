@@ -1,23 +1,30 @@
-use std::cmp::{max, min};
-
-use rltk::{GameState, Point, Rltk, VirtualKeyCode};
+use rltk::{GameState, Point, RandomNumberGenerator, Rltk};
 use specs::prelude::*;
 
 use crate::{
     components::{
-        CombatStats, Confusion, Item, Player, Position, Ranged, Viewshed, WantsToDropItem,
-        WantsToMelee, WantsToPickupItem, WantsToUseItem,
+        CombatStats, InBackpack, Player, Position, Ranged, Viewshed, WantsToDropItem,
+        WantsToUseItem,
     },
     gamelog::GameLog,
     gui::{self, ItemMenuResult, TargetSelectResult},
     map::Map,
     menu::{main_menu, MainMenuResult, MainMenuSelection},
+    player, spawner,
     systems::{
         damage_system::delete_the_dead,
         saveload_system::{self, save_game},
         Systems,
     },
 };
+
+pub const MAP_WIDTH: u16 = 80;
+pub const MAP_HEIGHT: u16 = 43;
+const ROOM_COUNT: u8 = 30;
+const MIN_ROOM_SIZE: u8 = 6;
+const MAX_ROOM_SIZE: u8 = 10;
+const MAX_MONSTERS: i32 = 4;
+const MAX_ITEMS: i32 = 2;
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum RunState {
@@ -31,6 +38,7 @@ pub enum RunState {
     MainMenu { menu_selection: MainMenuSelection },
     SaveGame,
     Dead,
+    NextLevel,
 }
 
 pub struct State {
@@ -47,9 +55,10 @@ impl GameState for State {
         ctx.cls();
 
         match new_runstate {
-            RunState::MainMenu { .. } => {}
+            RunState::MainMenu { .. } | RunState::NextLevel => {}
             _ => {
                 gui::draw(&self.ecs, ctx);
+                delete_the_dead(&mut self.ecs);
             }
         }
 
@@ -59,7 +68,7 @@ impl GameState for State {
                 new_runstate = RunState::AwaitingInput;
             }
             RunState::AwaitingInput => {
-                new_runstate = self.player_input(ctx);
+                new_runstate = player::player_input(&mut self.ecs, ctx);
             }
             RunState::PlayerTurn => {
                 self.run_systems();
@@ -147,7 +156,7 @@ impl GameState for State {
                         }
                     }
                     MainMenuResult::Selected { selected } => match selected {
-                        MainMenuSelection::NewGame => new_runstate = RunState::PreRun,
+                        MainMenuSelection::NewGame => new_runstate = RunState::NextLevel,
                         MainMenuSelection::LoadGame => {
                             saveload_system::load_game(&mut self.ecs);
                             saveload_system::delete_save();
@@ -163,14 +172,16 @@ impl GameState for State {
                     menu_selection: MainMenuSelection::LoadGame,
                 };
             }
+            RunState::NextLevel => {
+                self.goto_next_level();
+                new_runstate = RunState::PreRun;
+            }
         }
 
         {
             let mut run_writer = self.ecs.write_resource::<RunState>();
             *run_writer = new_runstate;
         }
-
-        delete_the_dead(&mut self.ecs);
     }
 }
 
@@ -179,133 +190,113 @@ impl State {
         self.systems.run(&mut self.ecs);
     }
 
-    fn player_input(&mut self, ctx: &mut Rltk) -> RunState {
-        let can_act = {
-            let player = self.ecs.fetch::<Entity>();
-            let mut confusion = self.ecs.write_storage::<Confusion>();
-            if let Some(confused) = confusion.get_mut(*player) {
-                let mut gamelog = self.ecs.fetch_mut::<GameLog>();
-                gamelog.entries.push("You are still confused".to_string());
-                confused.turns -= 1;
-                if confused.turns == 0 {
-                    confusion.remove(*player);
-                }
-                false
+    fn goto_next_level(&mut self) {
+        let mut first_level = false;
+        // Generate new world map
+        let worldmap = {
+            let optional_map = self.ecs.try_fetch_mut::<Map>();
+            let mut rng = self.ecs.write_resource::<RandomNumberGenerator>();
+            if let Some(map) = optional_map {
+                map.new_map(ROOM_COUNT, MIN_ROOM_SIZE, MAX_ROOM_SIZE, &mut rng)
             } else {
-                true
+                let new_map = Map::new_map_rooms_and_corridors(
+                    MAP_WIDTH,
+                    MAP_HEIGHT,
+                    80,
+                    50,
+                    ROOM_COUNT,
+                    MIN_ROOM_SIZE,
+                    MAX_ROOM_SIZE,
+                    &mut rng,
+                    1,
+                );
+                first_level = true;
+                new_map
             }
         };
 
-        if !can_act {
-            return RunState::PlayerTurn;
-        }
+        let (player_x, player_y) = worldmap.rooms[0].center();
+        self.ecs.insert(Point::new(player_x, player_y));
 
-        // Player movement
-        match ctx.key {
-            None => return RunState::AwaitingInput,
-            Some(key) => match key {
-                VirtualKeyCode::Numpad4 | VirtualKeyCode::A => self.try_move_player(-1, 0),
-                VirtualKeyCode::Numpad6 | VirtualKeyCode::D => self.try_move_player(1, 0),
-                VirtualKeyCode::Numpad8 | VirtualKeyCode::W => self.try_move_player(0, -1),
-                VirtualKeyCode::Numpad2 | VirtualKeyCode::X => self.try_move_player(0, 1),
-
-                // Diagonals
-                VirtualKeyCode::Numpad9 | VirtualKeyCode::E => self.try_move_player(1, -1),
-                VirtualKeyCode::Numpad7 | VirtualKeyCode::Q => self.try_move_player(-1, -1),
-                VirtualKeyCode::Numpad3 | VirtualKeyCode::C => self.try_move_player(1, 1),
-                VirtualKeyCode::Numpad1 | VirtualKeyCode::Z => self.try_move_player(-1, 1),
-
-                // Pickup
-                VirtualKeyCode::Numpad5 | VirtualKeyCode::S => self.pickup(),
-
-                // Inventory
-                VirtualKeyCode::I => return RunState::ShowInventory,
-                VirtualKeyCode::R => return RunState::ShowDropItem,
-
-                // Save and Quit
-                VirtualKeyCode::Escape => return RunState::SaveGame,
-                _ => return RunState::AwaitingInput,
-            },
-        }
-        RunState::PlayerTurn
-    }
-
-    fn try_move_player(&mut self, delta_x: i32, delta_y: i32) {
-        let mut positions = self.ecs.write_storage::<Position>();
-        let mut players = self.ecs.write_storage::<Player>();
-        let mut viewsheds = self.ecs.write_storage::<Viewshed>();
-        let combat_stats = self.ecs.read_storage::<CombatStats>();
-        let map = self.ecs.fetch::<Map>();
-        let mut player_pos = self.ecs.write_resource::<Point>();
-        let entities = self.ecs.entities();
-        let mut wants_to_melee = self.ecs.write_storage::<WantsToMelee>();
-
-        for (entity, _player, pos, viewshed) in
-            (&entities, &mut players, &mut positions, &mut viewsheds).join()
-        {
-            let new_x = (pos.x as i32 + delta_x) as u16;
-            let new_y = (pos.y as i32 + delta_y) as u16;
-            if new_x < 1 || new_x > map.width - 1 || new_y < 1 || new_y > map.height - 1 {
-                return;
+        if first_level {
+            let player_entity = { spawner::player(&mut self.ecs, player_x, player_y) };
+            self.ecs.insert(player_entity);
+            let mut gamelog = self.ecs.fetch_mut::<GameLog>();
+            gamelog.entries.push("While roaming in the wilds, you stumbled upon a mysterious cave.".to_string());
+            gamelog.entries.push("Having no shelter from the harsh weather outside, you decide to explore it.".to_string());
+            gamelog.entries.push("But as soon as you enter the cave, the entrance colapses trapping you inside.".to_string());
+        } else {
+            let mut position_component = self.ecs.write_storage::<Position>();
+            let player_entity = self.ecs.fetch::<Entity>();
+            let player_position_component = position_component.get_mut(*player_entity);
+            if let Some(player_position) = player_position_component {
+                player_position.x = player_x;
+                player_position.y = player_y;
             }
 
-            let destination_idx = map.index_from_xy(new_x, new_y);
+            // Mark the player's visibility as dirty
+            let mut viewshed_components = self.ecs.write_storage::<Viewshed>();
+            let viewshed = viewshed_components.get_mut(*player_entity);
+            if let Some(viewshed) = viewshed {
+                viewshed.dirty = true;
+            }
 
-            for potential_target in map.tile_content[destination_idx].iter() {
-                let target = combat_stats.get(*potential_target);
-                if let Some(_target) = target {
-                    wants_to_melee
-                        .insert(
-                            entity,
-                            WantsToMelee {
-                                target: *potential_target,
-                            },
-                        )
-                        .expect("Add target failed");
-                    return;
+            // Notify the player and give them some health
+            let mut gamelog = self.ecs.fetch_mut::<GameLog>();
+            gamelog
+                .entries
+                .push("You descent to the next level, and take a moment to heal.".to_string());
+            let mut player_health_store = self.ecs.write_storage::<CombatStats>();
+            let player_health = player_health_store.get_mut(*player_entity);
+            if let Some(player_health) = player_health {
+                player_health.hp = u32::max(player_health.hp, player_health.max_hp / 2);
+            }
+        }
+
+        // Delete entities that aren't the player or player's equipment
+        let to_delete = self.entities_to_remove_on_level_change();
+        for target in to_delete {
+            self.ecs
+                .delete_entity(target)
+                .expect("Unable to delete entity");
+        }
+
+        // Generate new mobs and items
+        for room in worldmap.rooms.iter().skip(1) {
+            spawner::spawn_room(&mut self.ecs, &worldmap, &room, MAX_MONSTERS, MAX_ITEMS);
+        }
+
+        self.ecs.insert(worldmap);
+    }
+
+    fn entities_to_remove_on_level_change(&mut self) -> Vec<Entity> {
+        let entities = self.ecs.entities();
+        let player = self.ecs.read_storage::<Player>();
+        let backpack = self.ecs.read_storage::<InBackpack>();
+        let player_entity = self.ecs.fetch::<Entity>();
+
+        let mut to_delete: Vec<Entity> = Vec::new();
+        for entity in entities.join() {
+            let mut should_delete = true;
+
+            // Don't delete the player
+            if player.contains(entity) {
+                should_delete = false;
+            }
+
+            // Don't delete the player's equipment
+            let bp = backpack.get(entity);
+            if let Some(bp) = bp {
+                if bp.owner == *player_entity {
+                    should_delete = false;
                 }
             }
-            if !map.blocked[destination_idx] {
-                pos.x = min(map.width - 1, max(0, new_x));
-                pos.y = min(map.height - 1, max(0, new_y));
-                viewshed.dirty = true;
-                player_pos.x = pos.x as i32;
-                player_pos.y = pos.y as i32;
-            }
-        }
-    }
 
-    fn pickup(&mut self) {
-        let player_pos = self.ecs.fetch::<Point>();
-        let player_entity = self.ecs.fetch::<Entity>();
-        let entities = self.ecs.entities();
-        let items = self.ecs.read_storage::<Item>();
-        let positions = self.ecs.read_storage::<Position>();
-        let mut gamelog = self.ecs.fetch_mut::<GameLog>();
-
-        let mut target_item: Option<Entity> = None;
-        for (item_entity, _, position) in (&entities, &items, &positions).join() {
-            if position.x as i32 == player_pos.x && position.y as i32 == player_pos.y {
-                target_item = Some(item_entity);
+            if should_delete {
+                to_delete.push(entity);
             }
         }
 
-        match target_item {
-            None => gamelog
-                .entries
-                .push("There is nothing here to pickup".to_string()),
-            Some(item) => {
-                let mut pickup = self.ecs.write_storage::<WantsToPickupItem>();
-                pickup
-                    .insert(
-                        *player_entity,
-                        WantsToPickupItem {
-                            collected_by: *player_entity,
-                            item,
-                        },
-                    )
-                    .expect("Unable to insert want to pickup");
-            }
-        }
+        to_delete
     }
 }
