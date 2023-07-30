@@ -1,10 +1,14 @@
 use rltk::{RandomNumberGenerator, RGB};
-use specs::prelude::*;
+use specs::{
+    prelude::*,
+    saveload::{MarkedBuilder, SimpleMarker},
+};
 
 use crate::{
     components::{
         AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, InflictsDamage, Item,
-        Monster, Name, Player, Position, ProvidesHealing, Ranged, Renderable, Viewshed,
+        Monster, Name, Player, Position, ProvidesHealing, Ranged, Renderable, SerializeMe,
+        Viewshed,
     },
     map::Map,
     rect::Rect,
@@ -37,6 +41,7 @@ pub fn player(ecs: &mut World, player_x: u16, player_y: u16) -> Entity {
             defense: 2,
             power: 5,
         })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build()
 }
 
@@ -140,6 +145,7 @@ fn generic_mob(ecs: &mut World, x: u16, y: u16, glyph: rltk::FontCharType, name:
             defense: 1,
             power: 4,
         })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build()
 }
 
@@ -171,6 +177,7 @@ fn health_potion(ecs: &mut World, x: u16, y: u16) {
         .with(Item {})
         .with(Consumable {})
         .with(ProvidesHealing { amount: 8 })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
 
@@ -190,6 +197,7 @@ fn magic_missile_scroll(ecs: &mut World, x: u16, y: u16) {
         .with(Consumable {})
         .with(Ranged { range: 6 })
         .with(InflictsDamage { damage: 8 })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
 
@@ -210,6 +218,7 @@ fn fireball_scroll(ecs: &mut World, x: u16, y: u16) {
         .with(Ranged { range: 6 })
         .with(InflictsDamage { damage: 20 })
         .with(AreaOfEffect { radius: 3 })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
 
@@ -229,5 +238,6 @@ fn confusion_scroll(ecs: &mut World, x: u16, y: u16) {
         .with(Consumable {})
         .with(Ranged { range: 6 })
         .with(Confusion { turns: 4 })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

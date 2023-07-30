@@ -1,14 +1,19 @@
 use rltk::RGB;
+use serde::{Deserialize, Serialize};
+use specs::error::NoError;
 use specs::prelude::*;
-use specs_derive::Component;
+use specs::saveload::{ConvertSaveload, Marker, SimpleMarker};
+use specs_derive::*;
 
-#[derive(Component, Clone, Copy, PartialEq)]
+use crate::map::Map;
+
+#[derive(Component, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Position {
     pub x: u16,
     pub y: u16,
 }
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct Renderable {
     pub glyph: rltk::FontCharType,
     pub fg: RGB,
@@ -16,28 +21,28 @@ pub struct Renderable {
     pub render_order: i32,
 }
 
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Player {}
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct Viewshed {
     pub visible_tiles: Vec<rltk::Point>,
     pub range: u16,
     pub dirty: bool,
 }
 
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Monster {}
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct Name {
     pub name: String,
 }
 
-#[derive(Component, Debug, Clone, Copy)]
+#[derive(Component, Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct BlocksTile {}
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct CombatStats {
     pub max_hp: u32,
     pub hp: u32,
@@ -45,12 +50,12 @@ pub struct CombatStats {
     pub power: i32,
 }
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToMelee {
     pub target: Entity,
 }
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct SufferDamage {
     pub amount: Vec<u32>,
 }
@@ -68,58 +73,66 @@ impl SufferDamage {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Item {}
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct ProvidesHealing {
     pub amount: u32,
 }
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct InBackpack {
     pub owner: Entity,
 }
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToPickupItem {
     pub collected_by: Entity,
     pub item: Entity,
 }
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToUseItem {
     pub item: Entity,
     pub target: Option<Position>,
 }
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToDropItem {
     pub item: Entity,
     pub position: Position,
 }
 
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Consumable {}
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct Ranged {
     pub range: u16,
 }
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsDamage {
     pub damage: u32,
 }
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct AreaOfEffect {
     pub radius: u16,
 }
 
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct Confusion {
     pub turns: u8,
+}
+
+pub struct SerializeMe;
+
+// Special component that exists to help serialize the game data
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct SerializationHelper {
+    pub map: Map,
 }
 
 pub fn register_components(ecs: &mut World) {
@@ -144,4 +157,6 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<InflictsDamage>();
     ecs.register::<AreaOfEffect>();
     ecs.register::<Confusion>();
+    ecs.register::<SimpleMarker<SerializeMe>>();
+    ecs.register::<SerializationHelper>();
 }

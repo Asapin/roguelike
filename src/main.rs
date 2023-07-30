@@ -1,7 +1,8 @@
 use rltk::Point;
-use specs::prelude::*;
+use specs::{prelude::*, saveload::SimpleMarkerAllocator};
 
 use crate::{
+    components::SerializeMe,
     gamelog::GameLog,
     map::Map,
     state::{RunState, State},
@@ -12,6 +13,7 @@ mod components;
 mod gamelog;
 mod gui;
 mod map;
+mod menu;
 mod rect;
 mod spawner;
 mod state;
@@ -37,6 +39,7 @@ fn main() -> rltk::BError {
         systems: Systems::new(),
     };
     components::register_components(&mut gs.ecs);
+    gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     let mut rng = rltk::RandomNumberGenerator::new();
     let map = Map::new_map_rooms_and_corridors(
@@ -63,6 +66,8 @@ fn main() -> rltk::BError {
     gs.ecs.insert(GameLog {
         entries: vec!["Welcome to Rusty Roguelike".to_string()],
     });
-    gs.ecs.insert(RunState::PreRun);
+    gs.ecs.insert(RunState::MainMenu {
+        menu_selection: menu::MainMenuSelection::NewGame,
+    });
     rltk::main_loop(context, gs)
 }

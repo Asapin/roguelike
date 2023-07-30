@@ -11,7 +11,12 @@ use crate::{
     gamelog::GameLog,
     gui::{self, ItemMenuResult, TargetSelectResult},
     map::Map,
-    systems::{damage_system, Systems},
+    menu::{main_menu, MainMenuResult, MainMenuSelection},
+    systems::{
+        damage_system::delete_the_dead,
+        saveload_system::{self, save_game},
+        Systems,
+    },
 };
 
 #[derive(PartialEq, Clone, Copy)]
@@ -22,8 +27,10 @@ pub enum RunState {
     MonsterTurn,
     ShowInventory,
     ShowDropItem,
-    Dead,
     ShowTargeting { range: u16, item: Entity },
+    MainMenu { menu_selection: MainMenuSelection },
+    SaveGame,
+    Dead,
 }
 
 pub struct State {
@@ -32,15 +39,20 @@ pub struct State {
 }
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
-        ctx.cls();
-        damage_system::delete_the_dead(&mut self.ecs);
-        gui::draw(&self.ecs, ctx);
-
-        let mut new_runstate;
-        {
+        let mut new_runstate = {
             let runstate = self.ecs.fetch::<RunState>();
-            new_runstate = *runstate;
+            *runstate
+        };
+
+        ctx.cls();
+
+        match new_runstate {
+            RunState::MainMenu { .. } => {}
+            _ => {
+                gui::draw(&self.ecs, ctx);
+            }
         }
+
         match new_runstate {
             RunState::PreRun => {
                 self.run_systems();
@@ -104,7 +116,6 @@ impl GameState for State {
                     }
                 }
             }
-            RunState::Dead => {}
             RunState::ShowTargeting { range, item } => {
                 let target = gui::ranged_target(self, ctx, range);
                 match target {
@@ -126,12 +137,40 @@ impl GameState for State {
                     }
                 }
             }
+            RunState::Dead => {}
+            RunState::MainMenu { menu_selection } => {
+                let result = main_menu(ctx, menu_selection);
+                match result {
+                    MainMenuResult::NoSelection { selected } => {
+                        new_runstate = RunState::MainMenu {
+                            menu_selection: selected,
+                        }
+                    }
+                    MainMenuResult::Selected { selected } => match selected {
+                        MainMenuSelection::NewGame => new_runstate = RunState::PreRun,
+                        MainMenuSelection::LoadGame => {
+                            saveload_system::load_game(&mut self.ecs);
+                            saveload_system::delete_save();
+                            new_runstate = RunState::AwaitingInput;
+                        }
+                        MainMenuSelection::Quit => ::std::process::exit(0),
+                    },
+                }
+            }
+            RunState::SaveGame => {
+                save_game(&mut self.ecs);
+                new_runstate = RunState::MainMenu {
+                    menu_selection: MainMenuSelection::LoadGame,
+                };
+            }
         }
 
         {
             let mut run_writer = self.ecs.write_resource::<RunState>();
             *run_writer = new_runstate;
         }
+
+        delete_the_dead(&mut self.ecs);
     }
 }
 
@@ -182,6 +221,9 @@ impl State {
                 // Inventory
                 VirtualKeyCode::I => return RunState::ShowInventory,
                 VirtualKeyCode::R => return RunState::ShowDropItem,
+
+                // Save and Quit
+                VirtualKeyCode::Escape => return RunState::SaveGame,
                 _ => return RunState::AwaitingInput,
             },
         }
