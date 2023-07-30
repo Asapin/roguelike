@@ -30,7 +30,8 @@ impl<'a> System<'a> for DamageSystem {
     }
 }
 
-pub fn delete_the_dead(ecs: &mut World) {
+pub fn delete_the_dead(ecs: &mut World) -> Option<RunState> {
+    let mut player_died = false;
     let mut dead: Vec<Entity> = Vec::new();
     {
         let combat_stats = ecs.read_storage::<CombatStats>();
@@ -43,8 +44,7 @@ pub fn delete_the_dead(ecs: &mut World) {
                     None => dead.push(entity),
                     Some(_) => {
                         console::log("You are dead");
-                        let mut run_writer = ecs.write_resource::<RunState>();
-                        *run_writer = RunState::Dead;
+                        player_died = true;
                     }
                 }
             }
@@ -52,5 +52,11 @@ pub fn delete_the_dead(ecs: &mut World) {
     }
     for victim in dead {
         ecs.delete_entity(victim).expect("Unable to delete");
+    }
+
+    if player_died {
+        Some(RunState::Dead)
+    } else {
+        None
     }
 }

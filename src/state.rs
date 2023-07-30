@@ -56,9 +56,12 @@ impl GameState for State {
 
         match new_runstate {
             RunState::MainMenu { .. } | RunState::NextLevel => {}
+            RunState::Dead => gui::draw(&self.ecs, ctx),
             _ => {
                 gui::draw(&self.ecs, ctx);
-                delete_the_dead(&mut self.ecs);
+                if let Some(state) = delete_the_dead(&mut self.ecs) {
+                    new_runstate = state;
+                }
             }
         }
 
