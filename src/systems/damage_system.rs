@@ -1,11 +1,8 @@
-use rltk::console;
 use specs::prelude::*;
 
-use crate::{
-    components::{CombatStats, Player, SufferDamage},
-    state::RunState,
-};
+use crate::components::{CombatStats, Player, SufferDamage};
 
+#[derive(Clone, Copy)]
 pub struct DamageSystem {}
 
 impl<'a> System<'a> for DamageSystem {
@@ -26,8 +23,7 @@ impl<'a> System<'a> for DamageSystem {
     }
 }
 
-pub fn delete_the_dead(ecs: &mut World) -> Option<RunState> {
-    let mut player_died = false;
+pub fn delete_the_dead(ecs: &mut World) {
     let mut dead: Vec<Entity> = Vec::new();
     {
         let combat_stats = ecs.read_storage::<CombatStats>();
@@ -36,23 +32,13 @@ pub fn delete_the_dead(ecs: &mut World) -> Option<RunState> {
         for (entity, stats) in (&entities, &combat_stats).join() {
             if stats.hp < 1 {
                 let player = players.get(entity);
-                match player {
-                    None => dead.push(entity),
-                    Some(_) => {
-                        console::log("You are dead");
-                        player_died = true;
-                    }
+                if player.is_none() {
+                    dead.push(entity);
                 }
             }
         }
     }
     for victim in dead {
         ecs.delete_entity(victim).expect("Unable to delete");
-    }
-
-    if player_died {
-        Some(RunState::Dead)
-    } else {
-        None
     }
 }

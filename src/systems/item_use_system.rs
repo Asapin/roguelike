@@ -10,6 +10,7 @@ use crate::{
     map::Map,
 };
 
+#[derive(Clone, Copy)]
 pub struct ItemUseSystem {}
 
 impl<'a> System<'a> for ItemUseSystem {

@@ -10,7 +10,7 @@ use specs::{
 };
 use specs::{Entity, Join};
 
-use crate::state::{MAP_HEIGHT, MAP_WIDTH};
+use crate::level::{MAP_HEIGHT, MAP_WIDTH};
 use crate::{
     components::{
         AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, InBackpack, InflictsDamage,

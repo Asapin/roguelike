@@ -4,10 +4,12 @@ use std::cmp::{max, min};
 
 use crate::{
     components::{
-        CombatStats, Confusion, Item, Player, Position, Viewshed, WantsToMelee, WantsToPickupItem, Monster,
+        CombatStats, Confusion, Item, Monster, Player, Position, Viewshed, WantsToMelee,
+        WantsToPickupItem,
     },
     gamelog::GameLog,
     map::{Map, TileType},
+    menu::pause_menu::PauseMenuSelection,
     state::RunState,
 };
 
@@ -55,7 +57,11 @@ pub fn player_input(ecs: &mut World, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::R => return RunState::ShowDropItem,
 
             // Save and Quit
-            VirtualKeyCode::Escape => return RunState::SaveGame,
+            VirtualKeyCode::Escape => {
+                return RunState::PauseMenu {
+                    selected_menu: PauseMenuSelection::Restart,
+                }
+            }
 
             // Level changes
             VirtualKeyCode::Period => {
@@ -180,7 +186,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
         for entity_id in map.tile_content[idx].iter() {
             let mob = monsters.get(*entity_id);
             match mob {
-                None => {},
+                None => {}
                 Some(_) => {
                     can_heal = false;
                     break;

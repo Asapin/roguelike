@@ -5,6 +5,7 @@ use crate::{
     map::Map,
 };
 
+#[derive(Clone, Copy)]
 pub struct MapIndexingSystem {}
 
 impl<'a> System<'a> for MapIndexingSystem {

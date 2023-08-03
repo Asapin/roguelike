@@ -7,6 +7,7 @@ use crate::{
     state::RunState,
 };
 
+#[derive(Clone, Copy)]
 pub struct MonsterAI {}
 
 impl<'a> System<'a> for MonsterAI {

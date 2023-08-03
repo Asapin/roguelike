@@ -1,10 +1,14 @@
 use specs::{RunNow, World, WorldExt};
 
 use self::{
-    damage_system::DamageSystem, inventory_system::ItemCollectionSystem,
-    item_drop_system::ItemDropSystem, item_use_system::ItemUseSystem,
-    map_indexing_system::MapIndexingSystem, melee_combat_system::MeleeCombatSystem,
-    monster_ai_system::MonsterAI, visibility_system::VisibilitySystem,
+    damage_system::{delete_the_dead, DamageSystem},
+    inventory_system::ItemCollectionSystem,
+    item_drop_system::ItemDropSystem,
+    item_use_system::ItemUseSystem,
+    map_indexing_system::MapIndexingSystem,
+    melee_combat_system::MeleeCombatSystem,
+    monster_ai_system::MonsterAI,
+    visibility_system::VisibilitySystem,
 };
 
 pub mod damage_system;
@@ -17,6 +21,7 @@ pub mod monster_ai_system;
 pub mod saveload_system;
 pub mod visibility_system;
 
+#[derive(Clone, Copy)]
 pub struct Systems {
     map_indexing: MapIndexingSystem,
     visibility: VisibilitySystem,
@@ -52,5 +57,6 @@ impl Systems {
         self.damage_system.run_now(ecs);
         self.item_collection.run_now(ecs);
         ecs.maintain();
+        delete_the_dead(ecs);
     }
 }

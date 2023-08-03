@@ -1,6 +1,10 @@
 use rltk::RGB;
+use specs::World;
 
-use crate::systems::saveload_system;
+use crate::{
+    state::{GlobalState, RunState},
+    systems::{saveload_system, Systems},
+};
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum MainMenuSelection {
@@ -15,8 +19,41 @@ pub enum MainMenuResult {
     Selected { selected: MainMenuSelection },
 }
 
-pub fn main_menu(ctx: &mut rltk::Rltk, mut current_selection: MainMenuSelection) -> MainMenuResult {
+pub fn main_menu(
+    ecs: &mut World,
+    ctx: &mut rltk::Rltk,
+    mut current_selection: MainMenuSelection,
+) -> GlobalState {
     let save_exists = saveload_system::does_save_exist();
+    print_main_menu(ctx, current_selection, save_exists);
+    let selected_menu = select_menu(ctx, current_selection, save_exists);
+    match selected_menu {
+        MainMenuResult::NoSelection { selected } => GlobalState::MainMenu {
+            selected_menu: selected,
+        },
+        MainMenuResult::Selected { selected } => match selected {
+            MainMenuSelection::NewGame => GlobalState::Gameplay {
+                phase: RunState::NewGame,
+                systems: Systems::new(),
+            },
+            MainMenuSelection::LoadGame => {
+                saveload_system::load_game(ecs);
+                saveload_system::delete_save();
+                GlobalState::Gameplay {
+                    phase: RunState::AwaitingInput,
+                    systems: Systems::new(),
+                }
+            }
+            MainMenuSelection::Quit => ::std::process::exit(0),
+        },
+    }
+}
+
+fn print_main_menu(
+    ctx: &mut rltk::Rltk,
+    mut current_selection: MainMenuSelection,
+    save_exists: bool,
+) {
     ctx.print_color_centered(
         15,
         RGB::named(rltk::YELLOW),
@@ -41,7 +78,13 @@ pub fn main_menu(ctx: &mut rltk::Rltk, mut current_selection: MainMenuSelection)
         current_selection = MainMenuSelection::NewGame;
     }
     ctx.print_color_centered(26, quit_game_fg, RGB::named(rltk::BLACK), "Quit");
+}
 
+fn select_menu(
+    ctx: &mut rltk::Rltk,
+    current_selection: MainMenuSelection,
+    save_exists: bool,
+) -> MainMenuResult {
     match ctx.key {
         None => MainMenuResult::NoSelection {
             selected: current_selection,

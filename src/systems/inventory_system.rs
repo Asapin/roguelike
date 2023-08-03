@@ -5,6 +5,7 @@ use crate::{
     gamelog::GameLog,
 };
 
+#[derive(Clone, Copy)]
 pub struct ItemCollectionSystem {}
 
 impl<'a> System<'a> for ItemCollectionSystem {

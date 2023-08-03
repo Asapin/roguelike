@@ -3,13 +3,15 @@ use specs::{prelude::*, saveload::SimpleMarkerAllocator};
 use crate::{
     components::SerializeMe,
     gamelog::GameLog,
-    state::{RunState, State},
-    systems::Systems,
+    menu::main_menu,
+    state::{GlobalState, State},
 };
 
 mod components;
+mod game_loop;
 mod gamelog;
 mod gui;
+mod level;
 mod map;
 mod menu;
 mod player;
@@ -25,10 +27,7 @@ fn main() -> rltk::BError {
         .build()?;
     context.with_post_scanlines(true);
 
-    let mut gs = State {
-        ecs: World::new(),
-        systems: Systems::new(),
-    };
+    let mut gs = State { ecs: World::new() };
     components::register_components(&mut gs.ecs);
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
@@ -36,8 +35,8 @@ fn main() -> rltk::BError {
     gs.ecs.insert(rng);
 
     gs.ecs.insert(GameLog { entries: vec![] });
-    gs.ecs.insert(RunState::MainMenu {
-        menu_selection: menu::MainMenuSelection::NewGame,
+    gs.ecs.insert(GlobalState::MainMenu {
+        selected_menu: main_menu::MainMenuSelection::NewGame,
     });
     rltk::main_loop(context, gs)
 }
