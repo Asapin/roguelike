@@ -28,3 +28,4 @@ Simple roguelike game in Rust + RLTK, based on [Roguelike Tutorial - In Rust](ht
 ## Other
 
 * `Space` - rest / skip turn
+* `.` - go to the next level
