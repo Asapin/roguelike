@@ -16,7 +16,7 @@ mod map;
 mod menu;
 mod player;
 mod rect;
-mod spawner;
+mod spawn;
 mod state;
 mod systems;
 

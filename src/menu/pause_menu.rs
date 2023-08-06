@@ -62,7 +62,7 @@ fn print_pause_menu(
         15,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
-        "Rust Roguelike Tutorial",
+        "Pause",
     );
 
     let mut restart_game_fg = RGB::named(rltk::WHITE);
@@ -97,7 +97,7 @@ fn select_menu(
             selected: current_selection,
         },
         Some(rltk::VirtualKeyCode::Escape) => PauseMenuResult::Cancel,
-        Some(rltk::VirtualKeyCode::Up | rltk::VirtualKeyCode::W) => {
+        Some(rltk::VirtualKeyCode::Numpad8 | rltk::VirtualKeyCode::W) => {
             let new_selection = match current_selection {
                 PauseMenuSelection::Restart => PauseMenuSelection::Quit,
                 PauseMenuSelection::Quit => {
@@ -114,7 +114,7 @@ fn select_menu(
                 selected: new_selection,
             }
         }
-        Some(rltk::VirtualKeyCode::Down | rltk::VirtualKeyCode::S) => {
+        Some(rltk::VirtualKeyCode::Numpad2 | rltk::VirtualKeyCode::S) => {
             let new_selection = match current_selection {
                 PauseMenuSelection::Restart => PauseMenuSelection::SaveGame,
                 PauseMenuSelection::SaveGame => {

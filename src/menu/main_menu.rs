@@ -92,7 +92,7 @@ fn select_menu(
         Some(rltk::VirtualKeyCode::Escape) => MainMenuResult::NoSelection {
             selected: MainMenuSelection::Quit,
         },
-        Some(rltk::VirtualKeyCode::Up | rltk::VirtualKeyCode::W) => {
+        Some(rltk::VirtualKeyCode::Numpad8 | rltk::VirtualKeyCode::W) => {
             let new_selection = match current_selection {
                 MainMenuSelection::NewGame => MainMenuSelection::Quit,
                 MainMenuSelection::LoadGame => MainMenuSelection::NewGame,
@@ -108,7 +108,7 @@ fn select_menu(
                 selected: new_selection,
             }
         }
-        Some(rltk::VirtualKeyCode::Down | rltk::VirtualKeyCode::S) => {
+        Some(rltk::VirtualKeyCode::Numpad2 | rltk::VirtualKeyCode::S) => {
             let new_selection = match current_selection {
                 MainMenuSelection::NewGame => {
                     if save_exists {

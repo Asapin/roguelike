@@ -35,7 +35,7 @@ pub struct Systems {
 
 impl Systems {
     pub fn new() -> Self {
-        Systems {
+        Self {
             map_indexing: MapIndexingSystem {},
             visibility: VisibilitySystem {},
             monster_ai: MonsterAI {},

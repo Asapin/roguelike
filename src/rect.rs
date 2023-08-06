@@ -10,7 +10,7 @@ pub struct Rect {
 
 impl Rect {
     pub fn new(x: u16, y: u16, w: u8, h: u8) -> Self {
-        Rect {
+        Self {
             x1: x,
             x2: x + w as u16,
             y1: y,

@@ -5,7 +5,7 @@ use crate::{
     components::{CombatStats, InBackpack, Player, Position, Viewshed},
     gamelog::GameLog,
     map::Map,
-    spawner,
+    spawn::spawner,
 };
 
 pub const MAP_WIDTH: u16 = 80;
@@ -13,14 +13,13 @@ pub const MAP_HEIGHT: u16 = 43;
 const ROOM_COUNT: u8 = 30;
 const MIN_ROOM_SIZE: u8 = 6;
 const MAX_ROOM_SIZE: u8 = 10;
-const MAX_MONSTERS: i32 = 4;
-const MAX_ITEMS: i32 = 2;
+const MAX_ENTITIES: i32 = 4;
 
 pub fn new_game(ecs: &mut World) {
     // Remove all existing entities
     let to_delete: Vec<Entity> = {
         let entities = ecs.entities();
-        entities.join().into_iter().collect()
+        entities.join().collect()
     };
     for target in to_delete {
         ecs.delete_entity(target).expect("Unable to delete entity");
@@ -63,7 +62,7 @@ pub fn new_game(ecs: &mut World) {
 
     // Generate new mobs and items
     for room in worldmap.rooms.iter().skip(1) {
-        spawner::spawn_room(ecs, &worldmap, &room, MAX_MONSTERS, MAX_ITEMS);
+        spawner::spawn_room(ecs, &worldmap, room, MAX_ENTITIES);
     }
 
     ecs.insert(worldmap);
@@ -120,7 +119,7 @@ pub fn next_level(ecs: &mut World) {
 
     // Generate new mobs and items
     for room in worldmap.rooms.iter().skip(1) {
-        spawner::spawn_room(ecs, &worldmap, &room, MAX_MONSTERS, MAX_ITEMS);
+        spawner::spawn_room(ecs, &worldmap, room, MAX_ENTITIES);
     }
 
     ecs.insert(worldmap);

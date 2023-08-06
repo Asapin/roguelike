@@ -73,7 +73,7 @@ impl<'a> System<'a> for ItemUseSystem {
                                 p.x > 0
                                     && p.x < map.width as i32 - 1
                                     && p.y > 0
-                                    && p.y <= map.height as i32 - 1
+                                    && p.y < map.height as i32
                             });
                             for tile_idx in blast_tiles.iter() {
                                 let idx = map.index_from_xy(tile_idx.x as u16, tile_idx.y as u16);
@@ -110,7 +110,7 @@ impl<'a> System<'a> for ItemUseSystem {
             if let Some(damage_item) = damage_item {
                 for target in targets.iter() {
                     let stats = combat_stats.get(*target);
-                    if let Some(_) = stats {
+                    if stats.is_some() {
                         SufferDamage::new_damage(&mut suffer_damage, *target, damage_item.damage);
                         if entity == *player_entity {
                             let item_name = names.get(use_item.item).unwrap();
@@ -138,7 +138,7 @@ impl<'a> System<'a> for ItemUseSystem {
                 if let Some(confusion) = causes_confusion {
                     for target in targets.iter() {
                         let stats = combat_stats.get(*target);
-                        if let Some(_) = stats {
+                        if stats.is_some() {
                             add_confusion.push((*target, confusion.turns));
                             if entity == *player_entity {
                                 let item_name = names.get(use_item.item).unwrap();
@@ -168,10 +168,9 @@ impl<'a> System<'a> for ItemUseSystem {
             }
 
             let consumable = consumables.get(use_item.item);
-            match (consumable, used_item) {
-                (Some(_), true) => entities.delete(use_item.item).expect("Delete failed"),
-                _ => {}
-            };
+            if let (Some(_), true) = (consumable, used_item) {
+                entities.delete(use_item.item).expect("Delete failed");
+            }
         }
 
         wants_use.clear();
