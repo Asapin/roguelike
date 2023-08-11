@@ -8,9 +8,9 @@ use specs::{
 
 use crate::{
     components::{
-        AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, InflictsDamage, Item,
-        Monster, Name, Player, Position, ProvidesHealing, Ranged, Renderable, SerializeMe,
-        Viewshed,
+        AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EquipmentSlot,
+        Equippable, InflictsDamage, Item, MeleePowerBonus, Monster, Name, Player, Position,
+        ProvidesHealing, Ranged, Renderable, SerializeMe, Viewshed,
     },
     map::Map,
     rect::Rect,
@@ -78,7 +78,9 @@ pub fn spawn_room(ecs: &mut World, map: &Map, room: &Rect, max_entities: i32) {
     }
 
     // Spawn entities
+    let mut item_counter = 0;
     for (idx, spawn) in spawn_points.into_iter() {
+        item_counter += 1;
         let (x, y) = map.xy_from_index(&idx);
         if let Some(spawn) = spawn {
             match spawn {
@@ -88,6 +90,8 @@ pub fn spawn_room(ecs: &mut World, map: &Map, room: &Rect, max_entities: i32) {
                 SpawnEntity::FireballScroll => fireball_scroll(ecs, x, y),
                 SpawnEntity::ConfusionScroll => confusion_scroll(ecs, x, y),
                 SpawnEntity::MagicMissileScroll => magic_missile_scroll(ecs, x, y),
+                SpawnEntity::Dagger => dagger(ecs, x, y, item_counter),
+                SpawnEntity::Shield => shield(ecs, x, y, item_counter),
             };
         }
     }
@@ -101,6 +105,8 @@ fn room_table(map_depth: u32) -> RandomTable {
         .add(SpawnEntity::FireballScroll, 2 + map_depth as i32)
         .add(SpawnEntity::ConfusionScroll, 2 + map_depth as i32)
         .add(SpawnEntity::MagicMissileScroll, 4)
+        .add(SpawnEntity::Dagger, 3)
+        .add(SpawnEntity::Shield, 3)
 }
 
 fn new_orc(ecs: &mut World, x: u16, y: u16) {
@@ -216,6 +222,48 @@ fn confusion_scroll(ecs: &mut World, x: u16, y: u16) {
         .with(Consumable {})
         .with(Ranged { range: 6 })
         .with(Confusion { turns: 4 })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
+fn dagger(ecs: &mut World, x: u16, y: u16, counter: i32) {
+    ecs.create_entity()
+        .with(Position { x, y })
+        .with(Renderable {
+            glyph: rltk::to_cp437('/'),
+            fg: RGB::named(rltk::CYAN),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: format!("Dagger {}", counter),
+        })
+        .with(Item {})
+        .with(Equippable {
+            slot: EquipmentSlot::Melee,
+        })
+        .with(MeleePowerBonus { power: 2 })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
+fn shield(ecs: &mut World, x: u16, y: u16, counter: i32) {
+    ecs.create_entity()
+        .with(Position { x, y })
+        .with(Renderable {
+            glyph: rltk::to_cp437('('),
+            fg: RGB::named(rltk::CYAN),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: format!("Shield {}", counter),
+        })
+        .with(Item {})
+        .with(Equippable {
+            slot: EquipmentSlot::Shield,
+        })
+        .with(DefenseBonus { defense: 1 })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

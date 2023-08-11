@@ -89,22 +89,24 @@ impl Map {
                 .rooms
                 .iter()
                 .any(|room: &Rect| room.intersect(&new_room));
-            if !intersects {
-                map.apply_room(&new_room);
-                if !map.rooms.is_empty() {
-                    let (new_x, new_y) = new_room.center();
-                    let (prev_x, prev_y) = map.rooms[map.rooms.len() - 1].center();
-                    if rng.rand::<bool>() {
-                        map.apply_horizontal_tunnel(prev_x, new_x, prev_y);
-                        map.apply_vertical_tunnel(prev_y, new_y, new_x);
-                    } else {
-                        map.apply_vertical_tunnel(prev_y, new_y, new_x);
-                        map.apply_horizontal_tunnel(prev_x, new_x, prev_y);
-                    }
-                }
-
-                map.rooms.push(new_room);
+            if intersects {
+                continue;
             }
+
+            map.apply_room(&new_room);
+            if !map.rooms.is_empty() {
+                let (new_x, new_y) = new_room.center();
+                let (prev_x, prev_y) = map.rooms[map.rooms.len() - 1].center();
+                if rng.rand::<bool>() {
+                    map.apply_horizontal_tunnel(prev_x, new_x, prev_y);
+                    map.apply_vertical_tunnel(prev_y, new_y, new_x);
+                } else {
+                    map.apply_vertical_tunnel(prev_y, new_y, new_x);
+                    map.apply_horizontal_tunnel(prev_x, new_x, prev_y);
+                }
+            }
+
+            map.rooms.push(new_room);
         }
 
         let stairs_position = map.rooms[map.rooms.len() - 1].center();

@@ -184,13 +184,9 @@ fn skip_turn(ecs: &mut World) -> RunState {
     for tile in viewshed.visible_tiles.iter() {
         let idx = map.index_from_xy(tile.x as u16, tile.y as u16);
         for entity_id in map.tile_content[idx].iter() {
-            let mob = monsters.get(*entity_id);
-            match mob {
-                None => {}
-                Some(_) => {
-                    can_heal = false;
-                    break;
-                }
+            if monsters.get(*entity_id).is_some() {
+                can_heal = false;
+                break;
             }
         }
     }

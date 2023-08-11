@@ -10,6 +10,7 @@ use specs::{
 };
 use specs::{Entity, Join};
 
+use crate::components::{Equippable, Equipped};
 use crate::level::{MAP_HEIGHT, MAP_WIDTH};
 use crate::{
     components::{
@@ -103,7 +104,9 @@ pub fn save_game(ecs: &mut World) {
             WantsToPickupItem,
             WantsToUseItem,
             WantsToDropItem,
-            SerializationHelper
+            SerializationHelper,
+            Equippable,
+            Equipped
         );
     }
 
@@ -156,7 +159,9 @@ pub fn load_game(ecs: &mut World) {
             WantsToPickupItem,
             WantsToUseItem,
             WantsToDropItem,
-            SerializationHelper
+            SerializationHelper,
+            Equippable,
+            Equipped
         );
     }
 

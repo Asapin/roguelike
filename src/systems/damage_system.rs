@@ -30,7 +30,7 @@ pub fn delete_the_dead(ecs: &mut World) {
         let players = ecs.read_storage::<Player>();
         let entities = ecs.entities();
         for (entity, stats) in (&entities, &combat_stats).join() {
-            if stats.hp < 1 {
+            if stats.hp == 0 {
                 let player = players.get(entity);
                 if player.is_none() {
                     dead.push(entity);

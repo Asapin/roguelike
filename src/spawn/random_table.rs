@@ -8,6 +8,8 @@ pub enum SpawnEntity {
     FireballScroll,
     ConfusionScroll,
     MagicMissileScroll,
+    Dagger,
+    Shield,
 }
 
 pub struct RandomEntry {

@@ -2,7 +2,7 @@ use rltk::{Point, RandomNumberGenerator};
 use specs::{Entity, Join, World, WorldExt};
 
 use crate::{
-    components::{CombatStats, InBackpack, Player, Position, Viewshed},
+    components::{CombatStats, Equipped, InBackpack, Player, Position, Viewshed},
     gamelog::GameLog,
     map::Map,
     spawn::spawner,
@@ -130,6 +130,7 @@ fn entities_to_remove_on_level_change(ecs: &mut World) -> Vec<Entity> {
     let player = ecs.read_storage::<Player>();
     let backpack = ecs.read_storage::<InBackpack>();
     let player_entity = ecs.fetch::<Entity>();
+    let equipped = ecs.read_storage::<Equipped>();
 
     let mut to_delete: Vec<Entity> = Vec::new();
     for entity in entities.join() {
@@ -140,10 +141,16 @@ fn entities_to_remove_on_level_change(ecs: &mut World) -> Vec<Entity> {
             should_delete = false;
         }
 
-        // Don't delete the player's equipment
-        let bp = backpack.get(entity);
-        if let Some(bp) = bp {
+        // Don't delete items from player's backpack
+        if let Some(bp) = backpack.get(entity) {
             if bp.owner == *player_entity {
+                should_delete = false;
+            }
+        }
+
+        // Don't delete equipped items
+        if let Some(eq) = equipped.get(entity) {
+            if eq.owner == *player_entity {
                 should_delete = false;
             }
         }

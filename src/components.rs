@@ -146,9 +146,36 @@ pub struct Confusion {
 pub struct SerializeMe;
 
 // Special component that exists to help serialize the game data
-#[derive(Component, Serialize, Deserialize, Clone)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct SerializationHelper {
     pub map: Map,
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+pub enum EquipmentSlot {
+    Melee,
+    Shield,
+}
+
+#[derive(Component, ConvertSaveload, Clone, Copy)]
+pub struct Equippable {
+    pub slot: EquipmentSlot,
+}
+
+#[derive(Component, ConvertSaveload, Clone, Copy)]
+pub struct Equipped {
+    pub owner: Entity,
+    pub slot: EquipmentSlot,
+}
+
+#[derive(Component, ConvertSaveload, Clone, Copy)]
+pub struct MeleePowerBonus {
+    pub power: i32,
+}
+
+#[derive(Component, ConvertSaveload, Clone, Copy)]
+pub struct DefenseBonus {
+    pub defense: i32,
 }
 
 pub fn register_components(ecs: &mut World) {
@@ -175,4 +202,8 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<Confusion>();
     ecs.register::<SimpleMarker<SerializeMe>>();
     ecs.register::<SerializationHelper>();
+    ecs.register::<Equippable>();
+    ecs.register::<Equipped>();
+    ecs.register::<MeleePowerBonus>();
+    ecs.register::<DefenseBonus>();
 }

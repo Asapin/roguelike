@@ -45,18 +45,12 @@ impl<'a> System<'a> for MonsterAI {
         for (entity, mut viewshed, _monster, mut pos) in
             (&entities, &mut viewshed, &monster, &mut position).join()
         {
-            let mut can_act = true;
-            let is_confused = confused.get_mut(entity);
-            if let Some(is_confused) = is_confused {
-                is_confused.turns -= 1;
-                if is_confused.turns == 0 {
+            if let Some(confusion) = confused.get_mut(entity) {
+                confusion.turns -= 1;
+                if confusion.turns == 0 {
                     confused.remove(entity);
                 }
-                can_act = false;
-            }
-
-            if !can_act {
-                return;
+                continue;
             }
 
             let distance =
