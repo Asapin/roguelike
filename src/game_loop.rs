@@ -1,9 +1,9 @@
-use specs::{Entity, World, WorldExt};
+use specs::{Entity, Join, World, WorldExt};
 
 use crate::{
     components::CombatStats,
     gui, level,
-    menu::{inventory_menu, pause_menu, target_menu},
+    menu::{game_over, inventory_menu, main_menu::MainMenuSelection, pause_menu, target_menu},
     player,
     state::{GlobalState, RunState},
     systems::Systems,
@@ -44,7 +44,18 @@ pub fn next_iteration(
         RunState::ShowDropItem => inventory_menu::drop_item_menu(ecs, ctx),
         RunState::ShowUnequipItem => inventory_menu::unequip_menu(ecs, ctx),
         RunState::ShowTargeting { range, item } => target_menu::target_menu(ecs, ctx, range, item),
-        RunState::Dead => RunState::Dead,
+        RunState::Dead => {
+            let result = game_over::game_over(ctx);
+            match result {
+                game_over::GameOverResult::NoSelection => RunState::Dead,
+                game_over::GameOverResult::QuitToMenu => {
+                    game_over_cleanup(ecs);
+                    return GlobalState::MainMenu {
+                        selected_menu: MainMenuSelection::NewGame,
+                    };
+                }
+            }
+        }
         RunState::NextLevel => {
             level::next_level(ecs);
             RunState::PreRun
@@ -72,5 +83,15 @@ fn player_is_dead(ecs: &mut World) -> bool {
         stats.hp == 0
     } else {
         false
+    }
+}
+
+fn game_over_cleanup(ecs: &mut World) {
+    let mut to_delete = Vec::new();
+    for e in ecs.entities().join() {
+        to_delete.push(e);
+    }
+    for del in to_delete {
+        ecs.delete_entity(del).expect("Deletion failed");
     }
 }
