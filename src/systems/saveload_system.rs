@@ -10,7 +10,7 @@ use specs::{
 };
 use specs::{Entity, Join};
 
-use crate::components::{Equippable, Equipped};
+use crate::components::{DefenseBonus, Equippable, Equipped, MeleePowerBonus, WantsToUnequipItem};
 use crate::level::{MAP_HEIGHT, MAP_WIDTH};
 use crate::{
     components::{
@@ -106,7 +106,10 @@ pub fn save_game(ecs: &mut World) {
             WantsToDropItem,
             SerializationHelper,
             Equippable,
-            Equipped
+            Equipped,
+            MeleePowerBonus,
+            DefenseBonus,
+            WantsToUnequipItem
         );
     }
 
@@ -161,7 +164,10 @@ pub fn load_game(ecs: &mut World) {
             WantsToDropItem,
             SerializationHelper,
             Equippable,
-            Equipped
+            Equipped,
+            MeleePowerBonus,
+            DefenseBonus,
+            WantsToUnequipItem
         );
     }
 

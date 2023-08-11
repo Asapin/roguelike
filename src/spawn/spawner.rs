@@ -91,7 +91,9 @@ pub fn spawn_room(ecs: &mut World, map: &Map, room: &Rect, max_entities: i32) {
                 SpawnEntity::ConfusionScroll => confusion_scroll(ecs, x, y),
                 SpawnEntity::MagicMissileScroll => magic_missile_scroll(ecs, x, y),
                 SpawnEntity::Dagger => dagger(ecs, x, y, item_counter),
+                SpawnEntity::Longsword => longsword(ecs, x, y, item_counter),
                 SpawnEntity::Shield => shield(ecs, x, y, item_counter),
+                SpawnEntity::TowerShield => tower_shield(ecs, x, y, item_counter),
             };
         }
     }
@@ -106,7 +108,9 @@ fn room_table(map_depth: u32) -> RandomTable {
         .add(SpawnEntity::ConfusionScroll, 2 + map_depth as i32)
         .add(SpawnEntity::MagicMissileScroll, 4)
         .add(SpawnEntity::Dagger, 3)
+        .add(SpawnEntity::Longsword, map_depth as i32 - 1)
         .add(SpawnEntity::Shield, 3)
+        .add(SpawnEntity::TowerShield, map_depth as i32 - 1)
 }
 
 fn new_orc(ecs: &mut World, x: u16, y: u16) {
@@ -247,6 +251,27 @@ fn dagger(ecs: &mut World, x: u16, y: u16, counter: i32) {
         .build();
 }
 
+fn longsword(ecs: &mut World, x: u16, y: u16, counter: i32) {
+    ecs.create_entity()
+        .with(Position { x, y })
+        .with(Renderable {
+            glyph: rltk::to_cp437('/'),
+            fg: RGB::named(rltk::YELLOW),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: format!("Longsword {}", counter),
+        })
+        .with(Item {})
+        .with(Equippable {
+            slot: EquipmentSlot::Melee,
+        })
+        .with(MeleePowerBonus { power: 4 })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
 fn shield(ecs: &mut World, x: u16, y: u16, counter: i32) {
     ecs.create_entity()
         .with(Position { x, y })
@@ -264,6 +289,27 @@ fn shield(ecs: &mut World, x: u16, y: u16, counter: i32) {
             slot: EquipmentSlot::Shield,
         })
         .with(DefenseBonus { defense: 1 })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
+fn tower_shield(ecs: &mut World, x: u16, y: u16, counter: i32) {
+    ecs.create_entity()
+        .with(Position { x, y })
+        .with(Renderable {
+            glyph: rltk::to_cp437('('),
+            fg: RGB::named(rltk::YELLOW),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: format!("Tower Shield {}", counter),
+        })
+        .with(Item {})
+        .with(Equippable {
+            slot: EquipmentSlot::Shield,
+        })
+        .with(DefenseBonus { defense: 3 })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

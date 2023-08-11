@@ -42,6 +42,7 @@ pub fn next_iteration(
         }
         RunState::ShowInventory => inventory_menu::inventory(ecs, ctx),
         RunState::ShowDropItem => inventory_menu::drop_item_menu(ecs, ctx),
+        RunState::ShowUnequipItem => inventory_menu::unequip_menu(ecs, ctx),
         RunState::ShowTargeting { range, item } => target_menu::target_menu(ecs, ctx, range, item),
         RunState::Dead => RunState::Dead,
         RunState::NextLevel => {

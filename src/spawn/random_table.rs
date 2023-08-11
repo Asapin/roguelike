@@ -9,7 +9,9 @@ pub enum SpawnEntity {
     ConfusionScroll,
     MagicMissileScroll,
     Dagger,
+    Longsword,
     Shield,
+    TowerShield,
 }
 
 pub struct RandomEntry {
@@ -37,8 +39,10 @@ impl RandomTable {
     }
 
     pub fn add(mut self, entity: SpawnEntity, weight: i32) -> Self {
-        self.total_weight += weight;
-        self.entries.push(RandomEntry::new(entity, weight));
+        if weight > 0 {
+            self.total_weight += weight;
+            self.entries.push(RandomEntry::new(entity, weight));
+        }
         self
     }
 

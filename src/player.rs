@@ -55,6 +55,7 @@ pub fn player_input(ecs: &mut World, ctx: &mut Rltk) -> RunState {
             // Inventory
             VirtualKeyCode::I => return RunState::ShowInventory,
             VirtualKeyCode::R => return RunState::ShowDropItem,
+            VirtualKeyCode::U => return RunState::ShowUnequipItem,
 
             // Save and Quit
             VirtualKeyCode::Escape => {

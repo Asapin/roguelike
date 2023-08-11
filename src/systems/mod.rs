@@ -2,8 +2,9 @@ use specs::{RunNow, World, WorldExt};
 
 use self::{
     damage_system::{delete_the_dead, DamageSystem},
-    inventory_system::ItemCollectionSystem,
+    item_collection::ItemCollectionSystem,
     item_drop_system::ItemDropSystem,
+    item_unequip_system::ItemUnequipSystem,
     item_use_system::ItemUseSystem,
     map_indexing_system::MapIndexingSystem,
     melee_combat_system::MeleeCombatSystem,
@@ -12,8 +13,9 @@ use self::{
 };
 
 pub mod damage_system;
-pub mod inventory_system;
+pub mod item_collection;
 pub mod item_drop_system;
+pub mod item_unequip_system;
 pub mod item_use_system;
 pub mod map_indexing_system;
 pub mod melee_combat_system;
@@ -29,8 +31,9 @@ pub struct Systems {
     melee_combat: MeleeCombatSystem,
     damage_system: DamageSystem,
     item_collection: ItemCollectionSystem,
-    potion_use: ItemUseSystem,
+    item_use: ItemUseSystem,
     item_drop: ItemDropSystem,
+    item_unequip: ItemUnequipSystem,
 }
 
 impl Systems {
@@ -42,13 +45,15 @@ impl Systems {
             melee_combat: MeleeCombatSystem {},
             damage_system: DamageSystem {},
             item_collection: ItemCollectionSystem {},
-            potion_use: ItemUseSystem {},
+            item_use: ItemUseSystem {},
             item_drop: ItemDropSystem {},
+            item_unequip: ItemUnequipSystem {},
         }
     }
 
     pub fn run(&mut self, ecs: &mut World) {
-        self.potion_use.run_now(ecs);
+        self.item_use.run_now(ecs);
+        self.item_unequip.run_now(ecs);
         self.item_drop.run_now(ecs);
         self.visibility.run_now(ecs);
         self.monster_ai.run_now(ecs);

@@ -24,6 +24,7 @@ Simple roguelike game in Rust + RLTK, based on [Roguelike Tutorial - In Rust](ht
 * `S` or `Num 5` - pick up items
 * `I` - open inventory
 * `R` - open drop menu
+* `U` - open unequip menu
 
 ## Other
 

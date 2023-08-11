@@ -178,6 +178,11 @@ pub struct DefenseBonus {
     pub defense: i32,
 }
 
+#[derive(Component, ConvertSaveload, Clone, Copy)]
+pub struct WantsToUnequipItem {
+    pub item: Entity,
+}
+
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
     ecs.register::<Renderable>();
@@ -206,4 +211,5 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<Equipped>();
     ecs.register::<MeleePowerBonus>();
     ecs.register::<DefenseBonus>();
+    ecs.register::<WantsToUnequipItem>();
 }

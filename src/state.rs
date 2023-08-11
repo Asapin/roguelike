@@ -17,6 +17,7 @@ pub enum RunState {
     ShowInventory,
     ShowDropItem,
     ShowTargeting { range: u16, item: Entity },
+    ShowUnequipItem,
     PauseMenu { selected_menu: PauseMenuSelection },
     Dead,
     NextLevel,

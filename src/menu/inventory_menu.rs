@@ -2,7 +2,10 @@ use rltk::{VirtualKeyCode, RGB};
 use specs::{Entity, Join, World, WorldExt};
 
 use crate::{
-    components::{InBackpack, Name, Position, Ranged, WantsToDropItem, WantsToUseItem},
+    components::{
+        Equipped, InBackpack, Name, Position, Ranged, WantsToDropItem, WantsToUnequipItem,
+        WantsToUseItem,
+    },
     map::Map,
     state::RunState,
 };
@@ -63,6 +66,22 @@ pub fn drop_item_menu(ecs: &mut World, ctx: &mut rltk::Rltk) -> RunState {
     }
 }
 
+pub fn unequip_menu(ecs: &mut World, ctx: &mut rltk::Rltk) -> RunState {
+    let selected_menu = show_unequip_item(ecs, ctx);
+    match selected_menu {
+        ItemMenuResult::Cancel => RunState::AwaitingInput,
+        ItemMenuResult::NoResponse => RunState::ShowUnequipItem,
+        ItemMenuResult::Selected(item) => {
+            let mut intent = ecs.write_storage::<WantsToUnequipItem>();
+            let player_entity = ecs.fetch::<Entity>();
+            intent
+                .insert(*player_entity, WantsToUnequipItem { item })
+                .expect("Unable to insert intent");
+            RunState::PlayerTurn
+        }
+    }
+}
+
 fn show_item_inventory(
     ecs: &mut World,
     ctx: &mut rltk::Rltk,
@@ -94,6 +113,78 @@ fn show_item_inventory(
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         window_title,
+    );
+    ctx.print_color(
+        18,
+        y + count + 1,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "ESCAPE to cancel",
+    );
+
+    let mut equippable: Vec<Entity> = Vec::new();
+    for (j, (entity, _pack, name)) in (&entities, &backpack, &names)
+        .join()
+        .filter(|(_, item, _)| item.owner == *player_entity)
+        .enumerate()
+    {
+        ctx.set(
+            17,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            rltk::to_cp437('('),
+        );
+        ctx.set(
+            18,
+            y,
+            RGB::named(rltk::YELLOW),
+            RGB::named(rltk::BLACK),
+            97 + j as rltk::FontCharType,
+        );
+        ctx.set(
+            19,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            rltk::to_cp437(')'),
+        );
+
+        ctx.print(21, y, &name.name.to_string());
+        equippable.push(entity);
+        y += 1;
+    }
+
+    select_menu(ctx, count, equippable)
+}
+
+fn show_unequip_item(ecs: &mut World, ctx: &mut rltk::Rltk) -> ItemMenuResult {
+    let player_entity = ecs.fetch::<Entity>();
+    let names = ecs.read_storage::<Name>();
+    let backpack = ecs.read_storage::<Equipped>();
+    let map = ecs.fetch::<Map>();
+    let entities = ecs.entities();
+
+    let inventory = (&backpack, &names)
+        .join()
+        .filter(|(item, _)| item.owner == *player_entity);
+    let count = usize::min((map.window_height - 4) as usize, inventory.count()) as u16;
+
+    let mut y = map.window_height / 2 - count / 2;
+    ctx.draw_box(
+        15,
+        y - 2,
+        31,
+        (count + 3) as i32,
+        RGB::named(rltk::WHITE),
+        RGB::named(rltk::BLACK),
+    );
+    ctx.print_color(
+        18,
+        y - 2,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Unequip which item?",
     );
     ctx.print_color(
         18,
