@@ -1,6 +1,6 @@
 use specs::prelude::*;
 
-use crate::components::{CombatStats, Player, SufferDamage};
+use crate::{components::{CombatStats, Player, SufferDamage, Position}, map::Map};
 
 #[derive(Clone, Copy)]
 pub struct DamageSystem {}
@@ -9,14 +9,21 @@ impl<'a> System<'a> for DamageSystem {
     type SystemData = (
         WriteStorage<'a, CombatStats>,
         WriteStorage<'a, SufferDamage>,
+        ReadStorage<'a, Position>,
+        WriteExpect<'a, Map>,
+        Entities<'a>
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut stats, mut damage) = data;
+        let (mut stats, mut damage, positions, mut map, entities) = data;
 
-        for (mut stats, damage) in (&mut stats, &damage).join() {
+        for (entity, mut stats, damage) in (&entities, &mut stats, &damage).join() {
             let total_damage = damage.amount.iter().sum::<u32>();
             stats.damage(total_damage);
+            if let Some(pos) = positions.get(entity) {
+                let idx = map.index_from_xy(pos.x, pos.y);
+                map.bloodstains.insert(idx);
+            }
         }
 
         damage.clear();

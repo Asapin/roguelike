@@ -19,11 +19,14 @@ fn draw_map(ctx: &mut Rltk, map: &Fetch<Map>) {
     let floor_fg = RGB::from_f32(0.5, 0.5, 0.5);
     let wall_fg = RGB::from_f32(0.0, 1.0, 0.0);
     let downstairs_fg = RGB::from_f32(0.0, 1.0, 1.0);
-    let bg = RGB::from_f32(0., 0., 0.);
     let floor = rltk::to_cp437('.');
     let downstairs = rltk::to_cp437('>');
 
+    let default_bg = RGB::from_f32(0., 0., 0.);
+    let bloodstain_bg = RGB::from_f32(0.75, 0., 0.);
+
     for (idx, tile) in map.tiles.iter().enumerate() {
+        let mut bg = default_bg;
         // Render a title depending upon the tile type
         if map.revealed_tiles[idx] {
             let (x, y) = map.xy_from_index(&idx);
@@ -42,6 +45,9 @@ fn draw_map(ctx: &mut Rltk, map: &Fetch<Map>) {
                     glyph = downstairs;
                     fg = downstairs_fg;
                 }
+            }
+            if map.bloodstains.contains(&idx) {
+                bg = bloodstain_bg;
             }
             if !map.visible_tiles[idx] {
                 fg = fg.to_greyscale();

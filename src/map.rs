@@ -1,4 +1,4 @@
-use std::cmp::{max, min};
+use std::{cmp::{max, min}, collections::HashSet};
 
 use rltk::{Algorithm2D, BaseMap, FontCharType, Point, RandomNumberGenerator};
 use serde::{Deserialize, Serialize};
@@ -25,6 +25,7 @@ pub struct Map {
     pub visible_tiles: Vec<bool>,
     pub blocked: Vec<bool>,
     pub depth: u32,
+    pub bloodstains: HashSet<usize>,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -77,6 +78,7 @@ impl Map {
             blocked: vec![false; map_dimensions],
             tile_content: vec![Vec::new(); map_dimensions],
             depth: new_depth,
+            bloodstains: HashSet::new(),
         };
 
         for _ in 0..room_count {
