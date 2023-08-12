@@ -1,6 +1,6 @@
 use std::cmp::{max, min};
 
-use rltk::{Algorithm2D, BaseMap, Point, RandomNumberGenerator};
+use rltk::{Algorithm2D, BaseMap, FontCharType, Point, RandomNumberGenerator};
 use serde::{Deserialize, Serialize};
 use specs::Entity;
 
@@ -171,6 +171,44 @@ impl Map {
         for content in self.tile_content.iter_mut() {
             content.clear();
         }
+    }
+
+    pub fn wall_glyph(&self, x: u16, y: u16) -> FontCharType {
+        let mut mask: u8 = 0;
+        if y > 0 && self.is_revealed_and_wall(x, y - 1) {
+            mask |= 0b0000_0001;
+        }
+        if y < self.height - 1 && self.is_revealed_and_wall(x, y + 1) {
+            mask |= 0b0000_0010;
+        }
+        if x > 0 && self.is_revealed_and_wall(x - 1, y) {
+            mask |= 0b0000_0100;
+        }
+        if x < self.width - 1 && self.is_revealed_and_wall(x + 1, y) {
+            mask |= 0b0000_1000;
+        }
+        match mask {
+            0b0000_0000 => 9, // Pillar because we can't see neighbors
+            0b0000_0001 | 0b0000_0010 | 0b0000_0011 => 186, // Walls to the north and/or south
+            0b0000_0100 => 205, // Wall only to the west
+            0b0000_0101 => 188, // Wall to the noth and west
+            0b0000_0110 => 187, // Wall to the south and west
+            0b0000_0111 => 185, // Wall to the north, south and west
+            0b0000_1000 => 205, // Wall only to the east
+            0b0000_1001 => 200, // Wall to the north and east
+            0b0000_1010 => 201, // Wall to the south and east
+            0b0000_1011 => 204, // Wall to the north, south and east
+            0b0000_1100 => 205, // Wall to the east and west
+            0b0000_1101 => 202, // Wall to the east, west and south
+            0b0000_1110 => 203, // Wall to the east, west and north
+            0b0000_1111 => 206, // Wall on all sides
+            _ => 35,          // Should never happen
+        }
+    }
+
+    fn is_revealed_and_wall(&self, x: u16, y: u16) -> bool {
+        let idx = self.index_from_xy(x, y);
+        self.tiles[idx] == TileType::Wall && self.revealed_tiles[idx]
     }
 }
 
