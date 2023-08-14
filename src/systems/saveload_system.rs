@@ -11,19 +11,22 @@ use specs::{
 use specs::{Entity, Join};
 
 use crate::components::{
-    DefenseBonus, Equippable, Equipped, HungerClock, Lifetime, MeleePowerBonus, Particle,
-    WantsToUnequipItem,
+    DefenseBonus, Equippable, Equipped, GameLogSerializationHelper, HungerClock, Lifetime,
+    MeleePowerBonus, Particle, ProvidesFood, WantsToUnequipItem,
 };
+use crate::gamelog::GameLog;
 use crate::level::{MAP_HEIGHT, MAP_WIDTH};
 use crate::{
     components::{
         AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, InBackpack, InflictsDamage,
-        Item, Monster, Name, Player, Position, ProvidesHealing, Ranged, Renderable,
-        SerializationHelper, SerializeMe, SufferDamage, Viewshed, WantsToDropItem, WantsToMelee,
+        Item, MapSerializationHelper, Monster, Name, Player, Position, ProvidesHealing, Ranged,
+        Renderable, SerializeMe, SufferDamage, Viewshed, WantsToDropItem, WantsToMelee,
         WantsToPickupItem, WantsToUseItem,
     },
     map::Map,
 };
+
+use super::particle_system::ParticleBuilder;
 
 const SAVE_FILE: &str = "./savegame.json";
 
@@ -66,13 +69,27 @@ pub fn delete_save() {
 
 pub fn save_game(ecs: &mut World) {
     // Create helper
-    let map_copy = ecs.get_mut::<Map>().unwrap().clone();
-    let save_helper = ecs
-        .create_entity()
-        .with(SerializationHelper { map: map_copy })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-
+    let mut save_helpers = Vec::new();
+    {
+        let map_copy = ecs.get_mut::<Map>().unwrap().clone();
+        let save_helper = ecs
+            .create_entity()
+            .with(MapSerializationHelper { map: map_copy })
+            .marked::<SimpleMarker<SerializeMe>>()
+            .build();
+        save_helpers.push(save_helper);
+    }
+    {
+        let gamelog_copy = ecs.get_mut::<GameLog>().unwrap().clone();
+        let save_helper = ecs
+            .create_entity()
+            .with(GameLogSerializationHelper {
+                gamelog: gamelog_copy,
+            })
+            .marked::<SimpleMarker<SerializeMe>>()
+            .build();
+        save_helpers.push(save_helper);
+    }
     // Actually serialize
     {
         let data = (
@@ -107,7 +124,8 @@ pub fn save_game(ecs: &mut World) {
             WantsToPickupItem,
             WantsToUseItem,
             WantsToDropItem,
-            SerializationHelper,
+            MapSerializationHelper,
+            GameLogSerializationHelper,
             Equippable,
             Equipped,
             MeleePowerBonus,
@@ -116,25 +134,18 @@ pub fn save_game(ecs: &mut World) {
             Lifetime,
             Particle,
             HungerClock,
-            ProvidesHealing
+            ProvidesFood
         );
     }
 
     // Clean up
-    ecs.delete_entity(save_helper).expect("Crash on cleanup");
+    for save_helper in save_helpers {
+        ecs.delete_entity(save_helper).expect("Crash on cleanup");
+    }
 }
 
 pub fn load_game(ecs: &mut World) {
-    {
-        let mut to_delete = Vec::new();
-        for e in ecs.entities().join() {
-            to_delete.push(e);
-        }
-        for del in to_delete {
-            ecs.delete_entity(del).expect("Deletion failed");
-        }
-    }
-
+    ecs.delete_all();
     let data = fs::read_to_string(SAVE_FILE).unwrap();
     let mut de = serde_json::Deserializer::from_str(&data);
 
@@ -169,7 +180,8 @@ pub fn load_game(ecs: &mut World) {
             WantsToPickupItem,
             WantsToUseItem,
             WantsToDropItem,
-            SerializationHelper,
+            MapSerializationHelper,
+            GameLogSerializationHelper,
             Equippable,
             Equipped,
             MeleePowerBonus,
@@ -178,23 +190,32 @@ pub fn load_game(ecs: &mut World) {
             Lifetime,
             Particle,
             HungerClock,
-            ProvidesHealing
+            ProvidesFood
         );
     }
 
-    let mut delete_me: Option<Entity> = None;
+    let mut helpers_to_delete = Vec::new();
+    let mut loaded_map = None;
+    let mut loaded_gamelog = None;
     {
         let entities = ecs.entities();
-        let helper = ecs.read_storage::<SerializationHelper>();
-        let player = ecs.read_storage::<Player>();
-        let position = ecs.read_storage::<Position>();
-        for (e, h) in (&entities, &helper).join() {
-            let mut world_map = ecs.write_resource::<Map>();
-            *world_map = h.map.clone();
-            world_map.tile_content = vec![Vec::new(); MAP_WIDTH as usize * MAP_HEIGHT as usize];
-            delete_me = Some(e);
+        let map_helper = ecs.read_storage::<MapSerializationHelper>();
+        for (e, h) in (&entities, &map_helper).join() {
+            let mut map = h.map.clone();
+            map.tile_content = vec![Vec::new(); MAP_WIDTH as usize * MAP_HEIGHT as usize];
+            loaded_map = Some(map);
+            helpers_to_delete.push(e);
         }
 
+        let log_helper = ecs.read_storage::<GameLogSerializationHelper>();
+        for (e, h) in (&entities, &log_helper).join() {
+            let gamelog = h.gamelog.clone();
+            loaded_gamelog = Some(gamelog);
+            helpers_to_delete.push(e);
+        }
+
+        let player = ecs.read_storage::<Player>();
+        let position = ecs.read_storage::<Position>();
         for (e, _p, pos) in (&entities, &player, &position).join() {
             let mut player_pos = ecs.write_resource::<rltk::Point>();
             *player_pos = Point::new(pos.x, pos.y);
@@ -203,6 +224,11 @@ pub fn load_game(ecs: &mut World) {
         }
     }
 
-    ecs.delete_entity(delete_me.unwrap())
-        .expect("Unable to delete helper");
+    for delete_entity in helpers_to_delete {
+        ecs.delete_entity(delete_entity)
+            .expect("Unable to delete helper");
+    }
+    ecs.insert(loaded_map.unwrap());
+    ecs.insert(loaded_gamelog.unwrap());
+    ecs.insert(ParticleBuilder::new());
 }

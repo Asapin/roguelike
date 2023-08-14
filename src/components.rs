@@ -5,6 +5,7 @@ use specs::prelude::*;
 use specs::saveload::{ConvertSaveload, Marker, SimpleMarker};
 use specs_derive::*;
 
+use crate::gamelog::GameLog;
 use crate::map::Map;
 
 #[derive(Component, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -22,7 +23,7 @@ pub struct Renderable {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Player;
+pub struct Player {}
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Viewshed {
@@ -32,7 +33,7 @@ pub struct Viewshed {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Monster;
+pub struct Monster {}
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Name {
@@ -40,7 +41,7 @@ pub struct Name {
 }
 
 #[derive(Component, Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct BlocksTile;
+pub struct BlocksTile {}
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct CombatStats {
@@ -90,7 +91,7 @@ impl SufferDamage {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Item;
+pub struct Item {}
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct ProvidesHealing {
@@ -121,7 +122,7 @@ pub struct WantsToDropItem {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Consumable;
+pub struct Consumable {}
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Ranged {
@@ -143,12 +144,17 @@ pub struct Confusion {
     pub turns: u8,
 }
 
-pub struct SerializeMe;
+pub struct SerializeMe {}
 
 // Special component that exists to help serialize the game data
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct SerializationHelper {
+pub struct MapSerializationHelper {
     pub map: Map,
+}
+
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct GameLogSerializationHelper {
+    pub gamelog: GameLog,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
@@ -189,7 +195,7 @@ pub struct Lifetime {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone, Copy)]
-pub struct Particle;
+pub struct Particle {}
 
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq)]
 pub enum HungerState {
@@ -206,7 +212,7 @@ pub struct HungerClock {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone, Copy)]
-pub struct ProvidesFood;
+pub struct ProvidesFood {}
 
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
@@ -231,7 +237,8 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<AreaOfEffect>();
     ecs.register::<Confusion>();
     ecs.register::<SimpleMarker<SerializeMe>>();
-    ecs.register::<SerializationHelper>();
+    ecs.register::<MapSerializationHelper>();
+    ecs.register::<GameLogSerializationHelper>();
     ecs.register::<Equippable>();
     ecs.register::<Equipped>();
     ecs.register::<MeleePowerBonus>();
