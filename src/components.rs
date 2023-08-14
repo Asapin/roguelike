@@ -22,7 +22,7 @@ pub struct Renderable {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Player {}
+pub struct Player;
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Viewshed {
@@ -32,7 +32,7 @@ pub struct Viewshed {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Monster {}
+pub struct Monster;
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Name {
@@ -40,7 +40,7 @@ pub struct Name {
 }
 
 #[derive(Component, Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct BlocksTile {}
+pub struct BlocksTile;
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct CombatStats {
@@ -90,7 +90,7 @@ impl SufferDamage {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Item {}
+pub struct Item;
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct ProvidesHealing {
@@ -121,7 +121,7 @@ pub struct WantsToDropItem {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Consumable {}
+pub struct Consumable;
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Ranged {
@@ -189,7 +189,24 @@ pub struct Lifetime {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone, Copy)]
-pub struct Particle {}
+pub struct Particle;
+
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq)]
+pub enum HungerState {
+    WellFed,
+    Normal,
+    Hungry,
+    Starving,
+}
+
+#[derive(Component, ConvertSaveload, Clone, Copy)]
+pub struct HungerClock {
+    pub state: HungerState,
+    pub duration: u32,
+}
+
+#[derive(Component, Serialize, Deserialize, Clone, Copy)]
+pub struct ProvidesFood;
 
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
@@ -222,4 +239,6 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<WantsToUnequipItem>();
     ecs.register::<Lifetime>();
     ecs.register::<Particle>();
+    ecs.register::<HungerClock>();
+    ecs.register::<ProvidesFood>();
 }

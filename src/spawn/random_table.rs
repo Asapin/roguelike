@@ -12,6 +12,7 @@ pub enum SpawnEntity {
     Longsword,
     Shield,
     TowerShield,
+    Ration,
 }
 
 pub struct RandomEntry {

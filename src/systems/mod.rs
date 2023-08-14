@@ -2,6 +2,7 @@ use specs::{RunNow, World, WorldExt};
 
 use self::{
     damage_system::{delete_the_dead, DamageSystem},
+    hunger_system::HungerSystem,
     item_collection::ItemCollectionSystem,
     item_drop_system::ItemDropSystem,
     item_unequip_system::ItemUnequipSystem,
@@ -15,6 +16,7 @@ use self::{
 };
 
 pub mod damage_system;
+pub mod hunger_system;
 pub mod item_collection;
 pub mod item_drop_system;
 pub mod item_unequip_system;
@@ -39,6 +41,7 @@ pub struct Systems {
     item_drop: ItemDropSystem,
     item_unequip: ItemUnequipSystem,
     particle_spawn: ParticleSpawnSystem,
+    hunger: HungerSystem,
 }
 
 impl Systems {
@@ -54,6 +57,7 @@ impl Systems {
             item_drop: ItemDropSystem {},
             item_unequip: ItemUnequipSystem {},
             particle_spawn: ParticleSpawnSystem {},
+            hunger: HungerSystem,
         }
     }
 
@@ -67,6 +71,7 @@ impl Systems {
         self.melee_combat.run_now(ecs);
         self.damage_system.run_now(ecs);
         self.item_collection.run_now(ecs);
+        self.hunger.run_now(ecs);
         self.particle_spawn.run_now(ecs);
         delete_the_dead(ecs);
         remove_expired_entities(ecs, ctx);

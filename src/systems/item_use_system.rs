@@ -3,8 +3,9 @@ use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect
 
 use crate::{
     components::{
-        AreaOfEffect, CombatStats, Confusion, Consumable, Equippable, Equipped, InBackpack,
-        InflictsDamage, Name, Position, ProvidesHealing, SufferDamage, WantsToUseItem,
+        AreaOfEffect, CombatStats, Confusion, Consumable, Equippable, Equipped, HungerClock,
+        HungerState, InBackpack, InflictsDamage, Name, Position, ProvidesFood, ProvidesHealing,
+        SufferDamage, WantsToUseItem,
     },
     gamelog::GameLog,
     map::Map,
@@ -35,6 +36,8 @@ impl<'a> System<'a> for ItemUseSystem {
         WriteStorage<'a, InBackpack>,
         WriteExpect<'a, ParticleBuilder>,
         ReadStorage<'a, Position>,
+        ReadStorage<'a, ProvidesFood>,
+        WriteStorage<'a, HungerClock>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -57,6 +60,8 @@ impl<'a> System<'a> for ItemUseSystem {
             mut backpack,
             mut particle_builder,
             positions,
+            food,
+            mut hunger,
         ) = data;
 
         for (entity, use_item) in (&entities, &wants_use).join() {
@@ -124,6 +129,18 @@ impl<'a> System<'a> for ItemUseSystem {
             );
 
             if !confused_entities.is_empty() {
+                used_item = true;
+            }
+
+            if try_to_eat(
+                use_item,
+                *player_entity,
+                entity,
+                &food,
+                &mut hunger,
+                &mut gamelog,
+                &names,
+            ) {
                 used_item = true;
             }
 
@@ -399,5 +416,47 @@ fn try_to_equip(
         ));
     }
 
+    true
+}
+
+fn try_to_eat(
+    use_item: &WantsToUseItem,
+    player_entity: Entity,
+    entity: Entity,
+    food: &ReadStorage<ProvidesFood>,
+    hunger: &mut WriteStorage<HungerClock>,
+    gamelog: &mut GameLog,
+    names: &ReadStorage<Name>,
+) -> bool {
+    let _ = match food.get(use_item.item) {
+        None => return false,
+        Some(item) => item,
+    };
+
+    let hunger_clock = match hunger.get_mut(entity) {
+        None => return false,
+        Some(clock) => clock,
+    };
+
+    let new_hunger_state = match hunger_clock.state {
+        HungerState::WellFed => HungerState::WellFed,
+        HungerState::Normal => HungerState::WellFed,
+        HungerState::Hungry => HungerState::Normal,
+        HungerState::Starving => HungerState::Hungry,
+    };
+    hunger_clock.duration = if new_hunger_state == HungerState::WellFed {
+        20
+    } else {
+        200
+    };
+
+    hunger_clock.state = new_hunger_state;
+    if entity == player_entity {
+        let ration_name = names.get(use_item.item).unwrap();
+        gamelog.entries.push(format!(
+            "You eat the {}, satisfying your hunger.",
+            ration_name.name
+        ));
+    }
     true
 }

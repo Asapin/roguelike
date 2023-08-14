@@ -4,8 +4,8 @@ use std::cmp::{max, min};
 
 use crate::{
     components::{
-        CombatStats, Confusion, Item, Monster, Player, Position, Viewshed, WantsToMelee,
-        WantsToPickupItem,
+        CombatStats, Confusion, HungerClock, HungerState, Item, Monster, Player, Position,
+        Viewshed, WantsToMelee, WantsToPickupItem,
     },
     gamelog::GameLog,
     map::{Map, TileType},
@@ -181,10 +181,22 @@ fn skip_turn(ecs: &mut World) -> RunState {
     let player_entity = ecs.fetch::<Entity>();
     let viewshed_storage = ecs.read_storage::<Viewshed>();
     let monsters = ecs.read_storage::<Monster>();
+    let hunger_clocks = ecs.read_storage::<HungerClock>();
 
     let map = ecs.fetch::<Map>();
 
     let mut can_heal = true;
+    if let Some(hunger) = hunger_clocks.get(*player_entity) {
+        if hunger.state == HungerState::Hungry || hunger.state == HungerState::Starving {
+            can_heal = false;
+        }
+    }
+
+    // Player can't heal when hungry anyway, so no need to check mob visibility
+    if !can_heal {
+        return RunState::PlayerTurn;
+    }
+
     let viewshed = viewshed_storage.get(*player_entity).unwrap();
     for tile in viewshed.visible_tiles.iter() {
         let idx = map.index_from_xy(tile.x as u16, tile.y as u16);

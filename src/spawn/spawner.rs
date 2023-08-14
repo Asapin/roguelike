@@ -9,8 +9,8 @@ use specs::{
 use crate::{
     components::{
         AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EquipmentSlot,
-        Equippable, InflictsDamage, Item, MeleePowerBonus, Monster, Name, Player, Position,
-        ProvidesHealing, Ranged, Renderable, SerializeMe, Viewshed,
+        Equippable, HungerClock, HungerState, InflictsDamage, Item, MeleePowerBonus, Monster, Name,
+        Player, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Viewshed,
     },
     map::Map,
     rect::Rect,
@@ -44,6 +44,10 @@ pub fn player(ecs: &mut World, player_x: u16, player_y: u16) -> Entity {
             hp: 30,
             defense: 2,
             power: 5,
+        })
+        .with(HungerClock {
+            state: HungerState::WellFed,
+            duration: 20,
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build()
@@ -94,6 +98,7 @@ pub fn spawn_room(ecs: &mut World, map: &Map, room: &Rect, max_entities: i32) {
                 SpawnEntity::Longsword => longsword(ecs, x, y, item_counter),
                 SpawnEntity::Shield => shield(ecs, x, y, item_counter),
                 SpawnEntity::TowerShield => tower_shield(ecs, x, y, item_counter),
+                SpawnEntity::Ration => rations(ecs, x, y),
             };
         }
     }
@@ -111,6 +116,7 @@ fn room_table(map_depth: u32) -> RandomTable {
         .add(SpawnEntity::Longsword, map_depth as i32 - 1)
         .add(SpawnEntity::Shield, 3)
         .add(SpawnEntity::TowerShield, map_depth as i32 - 1)
+        .add(SpawnEntity::Ration, 10)
 }
 
 fn new_orc(ecs: &mut World, x: u16, y: u16) {
@@ -310,6 +316,25 @@ fn tower_shield(ecs: &mut World, x: u16, y: u16, counter: i32) {
             slot: EquipmentSlot::Shield,
         })
         .with(DefenseBonus { defense: 3 })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
+fn rations(ecs: &mut World, x: u16, y: u16) {
+    ecs.create_entity()
+        .with(Position { x, y })
+        .with(Renderable {
+            glyph: rltk::to_cp437('%'),
+            fg: RGB::named(rltk::GREEN),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: "Rations".to_string(),
+        })
+        .with(Item {})
+        .with(ProvidesFood {})
+        .with(Consumable {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
