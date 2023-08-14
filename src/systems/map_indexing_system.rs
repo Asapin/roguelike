@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy)]
-pub struct MapIndexingSystem {}
+pub struct MapIndexingSystem;
 
 impl<'a> System<'a> for MapIndexingSystem {
     type SystemData = (

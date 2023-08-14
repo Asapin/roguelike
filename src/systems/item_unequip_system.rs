@@ -3,7 +3,7 @@ use specs::{Entities, Join, System, WriteStorage};
 use crate::components::{Equipped, InBackpack, WantsToUnequipItem};
 
 #[derive(Clone, Copy)]
-pub struct ItemUnequipSystem {}
+pub struct ItemUnequipSystem;
 
 impl<'a> System<'a> for ItemUnequipSystem {
     type SystemData = (

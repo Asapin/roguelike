@@ -10,7 +10,9 @@ use specs::{
 };
 use specs::{Entity, Join};
 
-use crate::components::{DefenseBonus, Equippable, Equipped, MeleePowerBonus, WantsToUnequipItem};
+use crate::components::{
+    DefenseBonus, Equippable, Equipped, Lifetime, MeleePowerBonus, Particle, WantsToUnequipItem,
+};
 use crate::level::{MAP_HEIGHT, MAP_WIDTH};
 use crate::{
     components::{
@@ -109,7 +111,9 @@ pub fn save_game(ecs: &mut World) {
             Equipped,
             MeleePowerBonus,
             DefenseBonus,
-            WantsToUnequipItem
+            WantsToUnequipItem,
+            Lifetime,
+            Particle
         );
     }
 
@@ -167,7 +171,9 @@ pub fn load_game(ecs: &mut World) {
             Equipped,
             MeleePowerBonus,
             DefenseBonus,
-            WantsToUnequipItem
+            WantsToUnequipItem,
+            Lifetime,
+            Particle
         );
     }
 

@@ -1,4 +1,7 @@
-use std::{cmp::{max, min}, collections::HashSet};
+use std::{
+    cmp::{max, min},
+    collections::HashSet,
+};
 
 use rltk::{Algorithm2D, BaseMap, FontCharType, Point, RandomNumberGenerator};
 use serde::{Deserialize, Serialize};

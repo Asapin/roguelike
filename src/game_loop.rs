@@ -24,16 +24,19 @@ pub fn next_iteration(
 
     let next_phase = match phase {
         RunState::PreRun => {
-            systems.run(ecs);
+            systems.run(ecs, &ctx);
             RunState::AwaitingInput
         }
-        RunState::AwaitingInput => player::player_input(ecs, ctx),
+        RunState::AwaitingInput => {
+            systems.run_during_pause(ecs, &ctx);
+            player::player_input(ecs, ctx)
+        }
         RunState::PlayerTurn => {
-            systems.run(ecs);
+            systems.run(ecs, &ctx);
             RunState::MonsterTurn
         }
         RunState::MonsterTurn => {
-            systems.run(ecs);
+            systems.run(ecs, &ctx);
             if player_is_dead(ecs) {
                 RunState::Dead
             } else {

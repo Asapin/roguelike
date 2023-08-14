@@ -1,14 +1,18 @@
+use rltk::RGB;
 use specs::prelude::*;
 
 use crate::{
     components::{
-        CombatStats, DefenseBonus, Equipped, MeleePowerBonus, Name, SufferDamage, WantsToMelee,
+        CombatStats, DefenseBonus, Equipped, MeleePowerBonus, Name, Position, SufferDamage,
+        WantsToMelee,
     },
     gamelog::GameLog,
 };
 
+use super::particle_system::ParticleBuilder;
+
 #[derive(Clone, Copy)]
-pub struct MeleeCombatSystem {}
+pub struct MeleeCombatSystem;
 
 impl<'a> System<'a> for MeleeCombatSystem {
     type SystemData = (
@@ -21,6 +25,8 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, MeleePowerBonus>,
         ReadStorage<'a, DefenseBonus>,
         ReadStorage<'a, Equipped>,
+        WriteExpect<'a, ParticleBuilder>,
+        ReadStorage<'a, Position>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -34,6 +40,8 @@ impl<'a> System<'a> for MeleeCombatSystem {
             melee_bonus,
             defense_bonus,
             equipped,
+            mut particle_builder,
+            positions,
         ) = data;
 
         for (entity, wants_melee, name, stats) in
@@ -73,6 +81,16 @@ impl<'a> System<'a> for MeleeCombatSystem {
             if damage == 0 {
                 let message = format!("{} is unable to hurt {}", &name.name, &target_name.name);
                 gamelog.entries.push(message);
+                if let Some(position) = positions.get(wants_melee.target) {
+                    particle_builder.request(
+                        position.x,
+                        position.y,
+                        RGB::named(rltk::ORANGE),
+                        RGB::named(rltk::BLACK),
+                        rltk::to_cp437('☼'),
+                        200.0,
+                    );
+                }
             } else {
                 let message = format!(
                     "{} hits {} for {} hp",
@@ -80,6 +98,17 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 );
                 gamelog.entries.push(message);
                 SufferDamage::new_damage(&mut inflict_damage, wants_melee.target, damage);
+
+                if let Some(position) = positions.get(wants_melee.target) {
+                    particle_builder.request(
+                        position.x,
+                        position.y,
+                        RGB::named(rltk::ORANGE),
+                        RGB::named(rltk::BLACK),
+                        rltk::to_cp437('‼'),
+                        200.0,
+                    );
+                }
             }
         }
 

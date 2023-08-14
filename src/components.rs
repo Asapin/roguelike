@@ -183,6 +183,14 @@ pub struct WantsToUnequipItem {
     pub item: Entity,
 }
 
+#[derive(Component, ConvertSaveload, Clone, Copy)]
+pub struct Lifetime {
+    pub lifetime_ms: f32,
+}
+
+#[derive(Component, Serialize, Deserialize, Clone, Copy)]
+pub struct Particle {}
+
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
     ecs.register::<Renderable>();
@@ -212,4 +220,6 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<MeleePowerBonus>();
     ecs.register::<DefenseBonus>();
     ecs.register::<WantsToUnequipItem>();
+    ecs.register::<Lifetime>();
+    ecs.register::<Particle>();
 }

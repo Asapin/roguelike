@@ -1,4 +1,4 @@
-use rltk::{Point, Rltk, VirtualKeyCode};
+use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::{prelude::*, Entity, World};
 use std::cmp::{max, min};
 
@@ -11,10 +11,11 @@ use crate::{
     map::{Map, TileType},
     menu::pause_menu::PauseMenuSelection,
     state::RunState,
+    systems::particle_system::ParticleBuilder,
 };
 
 pub fn player_input(ecs: &mut World, ctx: &mut Rltk) -> RunState {
-    let can_act = {
+    {
         let player = ecs.fetch::<Entity>();
         let mut confusion = ecs.write_storage::<Confusion>();
         if let Some(confused) = confusion.get_mut(*player) {
@@ -24,15 +25,18 @@ pub fn player_input(ecs: &mut World, ctx: &mut Rltk) -> RunState {
             if confused.turns == 0 {
                 confusion.remove(*player);
             }
-            false
-        } else {
-            true
+            let player_pos = ecs.write_resource::<Point>();
+            ecs.fetch_mut::<ParticleBuilder>().request(
+                player_pos.x as u16,
+                player_pos.y as u16,
+                RGB::named(rltk::MAGENTA),
+                RGB::named(rltk::BLACK),
+                rltk::to_cp437('?'),
+                200.0,
+            );
+            return RunState::PlayerTurn;
         }
     };
-
-    if !can_act {
-        return RunState::PlayerTurn;
-    }
 
     // Player movement
     match ctx.key {

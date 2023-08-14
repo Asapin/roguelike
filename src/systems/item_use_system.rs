@@ -1,17 +1,19 @@
-use rltk::Point;
+use rltk::{Point, RGB};
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::{
     components::{
         AreaOfEffect, CombatStats, Confusion, Consumable, Equippable, Equipped, InBackpack,
-        InflictsDamage, Name, ProvidesHealing, SufferDamage, WantsToUseItem,
+        InflictsDamage, Name, Position, ProvidesHealing, SufferDamage, WantsToUseItem,
     },
     gamelog::GameLog,
     map::Map,
 };
 
+use super::particle_system::ParticleBuilder;
+
 #[derive(Clone, Copy)]
-pub struct ItemUseSystem {}
+pub struct ItemUseSystem;
 
 impl<'a> System<'a> for ItemUseSystem {
     type SystemData = (
@@ -31,6 +33,8 @@ impl<'a> System<'a> for ItemUseSystem {
         ReadStorage<'a, Equippable>,
         WriteStorage<'a, Equipped>,
         WriteStorage<'a, InBackpack>,
+        WriteExpect<'a, ParticleBuilder>,
+        ReadStorage<'a, Position>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -51,6 +55,8 @@ impl<'a> System<'a> for ItemUseSystem {
             equippable,
             mut equipped,
             mut backpack,
+            mut particle_builder,
+            positions,
         ) = data;
 
         for (entity, use_item) in (&entities, &wants_use).join() {
@@ -70,7 +76,7 @@ impl<'a> System<'a> for ItemUseSystem {
             }
 
             // Targeting
-            let targets = targets(use_item, entity, &map, &aoe);
+            let targets = targets(use_item, entity, &map, &aoe, &mut particle_builder);
             let mut used_item = false;
 
             if try_to_heal(
@@ -82,6 +88,8 @@ impl<'a> System<'a> for ItemUseSystem {
                 &mut combat_stats,
                 &mut gamelog,
                 &names,
+                &mut particle_builder,
+                &positions,
             ) {
                 used_item = true;
             }
@@ -96,6 +104,8 @@ impl<'a> System<'a> for ItemUseSystem {
                 &mut suffer_damage,
                 &mut gamelog,
                 &names,
+                &mut particle_builder,
+                &positions,
             ) {
                 used_item = true;
             }
@@ -109,6 +119,8 @@ impl<'a> System<'a> for ItemUseSystem {
                 &mut combat_stats,
                 &mut gamelog,
                 &names,
+                &mut particle_builder,
+                &positions,
             );
 
             if !confused_entities.is_empty() {
@@ -136,6 +148,7 @@ fn targets(
     entity: Entity,
     map: &Map,
     aoe: &ReadStorage<AreaOfEffect>,
+    particle_builder: &mut ParticleBuilder,
 ) -> Vec<Entity> {
     let target_position = match use_item.target {
         None => return vec![entity],
@@ -167,6 +180,14 @@ fn targets(
                 for mob in map.tile_content[idx].iter() {
                     targets.push(*mob);
                 }
+                particle_builder.request(
+                    tile_idx.x as u16,
+                    tile_idx.y as u16,
+                    RGB::named(rltk::ORANGE),
+                    RGB::named(rltk::BLACK),
+                    rltk::to_cp437('░'),
+                    200.0,
+                );
             }
         }
     }
@@ -183,6 +204,8 @@ fn try_to_heal(
     combat_stats: &mut WriteStorage<CombatStats>,
     gamelog: &mut GameLog,
     names: &ReadStorage<Name>,
+    particle_builder: &mut ParticleBuilder,
+    positions: &ReadStorage<Position>,
 ) -> bool {
     let healing_item = match healing.get(use_item.item) {
         None => return false,
@@ -197,6 +220,16 @@ fn try_to_heal(
         };
         let hp_diff = stats.heal(healing_item.amount);
         used_item = true;
+        if let Some(pos) = positions.get(*target) {
+            particle_builder.request(
+                pos.x,
+                pos.y,
+                RGB::named(rltk::GREEN),
+                RGB::named(rltk::BLACK),
+                rltk::to_cp437('♥'),
+                200.0,
+            );
+        }
         if entity == player_entity {
             gamelog.entries.push(format!(
                 "You drink the {}, healing {} hp.",
@@ -218,6 +251,8 @@ fn try_to_damage(
     suffer_damage: &mut WriteStorage<SufferDamage>,
     gamelog: &mut GameLog,
     names: &ReadStorage<Name>,
+    particle_builder: &mut ParticleBuilder,
+    positions: &ReadStorage<Position>,
 ) -> bool {
     let damage_item = match inflict_damage.get(use_item.item) {
         None => return false,
@@ -232,6 +267,16 @@ fn try_to_damage(
 
         SufferDamage::new_damage(suffer_damage, *target, damage_item.damage);
         used_item = true;
+        if let Some(pos) = positions.get(*target) {
+            particle_builder.request(
+                pos.x,
+                pos.y,
+                RGB::named(rltk::RED),
+                RGB::named(rltk::BLACK),
+                rltk::to_cp437('‼'),
+                200.0,
+            );
+        }
         if entity == player_entity {
             let item_name = names.get(use_item.item).unwrap();
             if *target == player_entity {
@@ -260,6 +305,8 @@ fn try_to_confuse(
     combat_stats: &mut WriteStorage<CombatStats>,
     gamelog: &mut GameLog,
     names: &ReadStorage<Name>,
+    particle_builder: &mut ParticleBuilder,
+    positions: &ReadStorage<Position>,
 ) -> Vec<(Entity, u8)> {
     let confusion_item = match confusion.get(use_item.item) {
         None => return vec![],
@@ -273,6 +320,16 @@ fn try_to_confuse(
         }
 
         add_confusion.push((*target, confusion_item.turns));
+        if let Some(pos) = positions.get(*target) {
+            particle_builder.request(
+                pos.x,
+                pos.y,
+                RGB::named(rltk::MAGENTA),
+                RGB::named(rltk::BLACK),
+                rltk::to_cp437('?'),
+                200.0,
+            );
+        }
         if entity == player_entity {
             let item_name = names.get(use_item.item).unwrap();
             if *target == player_entity {

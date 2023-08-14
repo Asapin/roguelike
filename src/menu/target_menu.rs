@@ -42,7 +42,7 @@ fn show_target_menu(ecs: &mut World, ctx: &mut Rltk, range: u16) -> TargetSelect
 
     let viewshed = viewsheds.get(*player_entity);
     let mouse_pos = ctx.mouse_pos();
-    let (available_cells, valid_target) = if let Some(viewshed) = viewshed {
+    let valid_target = if let Some(viewshed) = viewshed {
         draw_menu(ctx, viewshed, *player_pos, range, mouse_pos)
     } else {
         console::log("Player entity doesn't have a viewshed");
@@ -73,7 +73,7 @@ fn draw_menu<'a>(
     player_pos: Point,
     range: u16,
     mouse_pos: (i32, i32),
-) -> (Vec<&'a Point>, bool) {
+) -> bool {
     ctx.print_color(
         5,
         0,
@@ -99,5 +99,5 @@ fn draw_menu<'a>(
         }
     }
 
-    (available_cells, valid_target)
+    valid_target
 }

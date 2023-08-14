@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy)]
-pub struct ItemCollectionSystem {}
+pub struct ItemCollectionSystem;
 
 impl<'a> System<'a> for ItemCollectionSystem {
     type SystemData = (

@@ -6,6 +6,7 @@ use crate::{
     gamelog::GameLog,
     map::Map,
     spawn::spawner,
+    systems::particle_system::ParticleBuilder,
 };
 
 pub const MAP_WIDTH: u16 = 80;
@@ -66,6 +67,7 @@ pub fn new_game(ecs: &mut World) {
     }
 
     ecs.insert(worldmap);
+    ecs.insert(ParticleBuilder::new());
 }
 
 pub fn next_level(ecs: &mut World) {

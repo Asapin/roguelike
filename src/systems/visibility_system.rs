@@ -6,7 +6,7 @@ use crate::components::{Player, Position, Viewshed};
 use crate::map::Map;
 
 #[derive(Clone, Copy)]
-pub struct VisibilitySystem {}
+pub struct VisibilitySystem;
 
 impl<'a> System<'a> for VisibilitySystem {
     type SystemData = (

@@ -1,9 +1,12 @@
 use specs::prelude::*;
 
-use crate::{components::{CombatStats, Player, SufferDamage, Position}, map::Map};
+use crate::{
+    components::{CombatStats, Player, Position, SufferDamage},
+    map::Map,
+};
 
 #[derive(Clone, Copy)]
-pub struct DamageSystem {}
+pub struct DamageSystem;
 
 impl<'a> System<'a> for DamageSystem {
     type SystemData = (
@@ -11,7 +14,7 @@ impl<'a> System<'a> for DamageSystem {
         WriteStorage<'a, SufferDamage>,
         ReadStorage<'a, Position>,
         WriteExpect<'a, Map>,
-        Entities<'a>
+        Entities<'a>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
