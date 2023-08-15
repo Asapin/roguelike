@@ -8,7 +8,7 @@ use crate::{
         SufferDamage, WantsToUseItem,
     },
     gamelog::GameLog,
-    map::Map,
+    map::map::Map,
 };
 
 use super::particle_system::ParticleBuilder;

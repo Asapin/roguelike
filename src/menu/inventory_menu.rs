@@ -6,7 +6,7 @@ use crate::{
         Equipped, InBackpack, Name, Position, Ranged, WantsToDropItem, WantsToUnequipItem,
         WantsToUseItem,
     },
-    map::Map,
+    map::map::Map,
     state::RunState,
 };
 

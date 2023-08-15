@@ -8,7 +8,7 @@ use crate::{
         Position, Viewshed, WantsToMelee, WantsToPickupItem,
     },
     gamelog::GameLog,
-    map::{Map, TileType},
+    map::map::{Map, TileType},
     menu::pause_menu::PauseMenuSelection,
     state::RunState,
     systems::particle_system::ParticleBuilder,

@@ -7,7 +7,7 @@ use crate::{
         SufferDamage,
     },
     gamelog::GameLog,
-    map::Map,
+    map::map::Map,
 };
 
 use super::particle_system::ParticleBuilder;

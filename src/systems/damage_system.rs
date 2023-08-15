@@ -2,7 +2,7 @@ use specs::prelude::*;
 
 use crate::{
     components::{CombatStats, Player, Position, SufferDamage},
-    map::Map,
+    map::map::Map,
 };
 
 #[derive(Clone, Copy)]

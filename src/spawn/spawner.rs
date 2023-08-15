@@ -13,7 +13,7 @@ use crate::{
         MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged,
         Renderable, SerializeMe, SingleActivation, Viewshed,
     },
-    map::Map,
+    map::map::Map,
     rect::Rect,
 };
 

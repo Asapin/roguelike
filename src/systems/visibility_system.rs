@@ -4,7 +4,7 @@ use specs::{System, WriteStorage};
 
 use crate::components::{Hidden, Name, Player, Position, Viewshed};
 use crate::gamelog::GameLog;
-use crate::map::Map;
+use crate::map::map::Map;
 
 #[derive(Clone, Copy)]
 pub struct VisibilitySystem;

@@ -6,7 +6,7 @@ use specs::saveload::{ConvertSaveload, Marker, SimpleMarker};
 use specs_derive::*;
 
 use crate::gamelog::GameLog;
-use crate::map::Map;
+use crate::map::map::Map;
 
 #[derive(Component, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Position {

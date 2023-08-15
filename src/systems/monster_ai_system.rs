@@ -3,7 +3,7 @@ use specs::prelude::*;
 
 use crate::{
     components::{Confusion, EntityMoved, Monster, Position, Viewshed, WantsToMelee},
-    map::Map,
+    map::map::Map,
     state::RunState,
 };
 

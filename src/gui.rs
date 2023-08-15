@@ -6,7 +6,7 @@ use crate::{
         CombatStats, Hidden, HungerClock, HungerState, Name, Player, Position, Renderable,
     },
     gamelog::GameLog,
-    map::{Map, TileType},
+    map::map::{Map, TileType},
 };
 
 pub fn draw(ecs: &World, ctx: &mut Rltk) {

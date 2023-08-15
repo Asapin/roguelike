@@ -4,16 +4,11 @@ use specs::{Entity, Join, World, WorldExt};
 use crate::{
     components::{CombatStats, Equipped, InBackpack, Player, Position, Viewshed},
     gamelog::GameLog,
-    map::Map,
+    map::{map::Map, generate_map},
     spawn::spawner,
     systems::particle_system::ParticleBuilder,
 };
 
-pub const MAP_WIDTH: u16 = 80;
-pub const MAP_HEIGHT: u16 = 43;
-const ROOM_COUNT: u8 = 30;
-const MIN_ROOM_SIZE: u8 = 6;
-const MAX_ROOM_SIZE: u8 = 10;
 const MAX_ENTITIES: i32 = 4;
 
 pub fn new_game(ecs: &mut World) {
@@ -28,17 +23,7 @@ pub fn new_game(ecs: &mut World) {
 
     let worldmap = {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        Map::new_map_rooms_and_corridors(
-            MAP_WIDTH,
-            MAP_HEIGHT,
-            80,
-            50,
-            ROOM_COUNT,
-            MIN_ROOM_SIZE,
-            MAX_ROOM_SIZE,
-            &mut rng,
-            1,
-        )
+        generate_map(1, &mut rng)
     };
 
     let (player_x, player_y) = worldmap.rooms[0].center();
@@ -75,7 +60,7 @@ pub fn next_level(ecs: &mut World) {
     let worldmap = {
         let map = ecs.fetch_mut::<Map>();
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        map.new_map(ROOM_COUNT, MIN_ROOM_SIZE, MAX_ROOM_SIZE, &mut rng)
+        generate_map(map.depth + 1, &mut rng)
     };
 
     let (player_x, player_y) = worldmap.rooms[0].center();

@@ -2,30 +2,26 @@ use std::fs::{self, File};
 use std::path::Path;
 
 use rltk::Point;
-use specs::error::NoError;
-use specs::saveload::SimpleMarkerAllocator;
 use specs::{
-    saveload::{DeserializeComponents, MarkedBuilder, SerializeComponents, SimpleMarker},
-    Builder, World, WorldExt,
+    error::NoError,
+    saveload::{
+        DeserializeComponents, MarkedBuilder, SerializeComponents, SimpleMarker,
+        SimpleMarkerAllocator,
+    },
+    Builder, Entity, Join, World, WorldExt,
 };
-use specs::{Entity, Join};
 
 use crate::components::{
-    DefenseBonus, EntityMoved, EntryTrigger, Equippable, Equipped, GameLogSerializationHelper,
-    Hidden, HungerClock, Lifetime, MeleePowerBonus, Particle, ProvidesFood, SingleActivation,
-    WantsToUnequipItem,
+    AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EntityMoved,
+    EntryTrigger, Equippable, Equipped, GameLogSerializationHelper, Hidden, HungerClock,
+    InBackpack, InflictsDamage, Item, Lifetime, MapSerializationHelper, MeleePowerBonus, Monster,
+    Name, Particle, Player, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable,
+    SerializeMe, SingleActivation, SufferDamage, Viewshed, WantsToDropItem, WantsToMelee,
+    WantsToPickupItem, WantsToUnequipItem, WantsToUseItem,
 };
+
 use crate::gamelog::GameLog;
-use crate::level::{MAP_HEIGHT, MAP_WIDTH};
-use crate::{
-    components::{
-        AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, InBackpack, InflictsDamage,
-        Item, MapSerializationHelper, Monster, Name, Player, Position, ProvidesHealing, Ranged,
-        Renderable, SerializeMe, SufferDamage, Viewshed, WantsToDropItem, WantsToMelee,
-        WantsToPickupItem, WantsToUseItem,
-    },
-    map::Map,
-};
+use crate::map::map::Map;
 
 use super::particle_system::ParticleBuilder;
 
@@ -211,7 +207,7 @@ pub fn load_game(ecs: &mut World) {
         let map_helper = ecs.read_storage::<MapSerializationHelper>();
         for (e, h) in (&entities, &map_helper).join() {
             let mut map = h.map.clone();
-            map.tile_content = vec![Vec::new(); MAP_WIDTH as usize * MAP_HEIGHT as usize];
+            map.tile_content = vec![Vec::new(); map.width as usize * map.height as usize];
             loaded_map = Some(map);
             helpers_to_delete.push(e);
         }

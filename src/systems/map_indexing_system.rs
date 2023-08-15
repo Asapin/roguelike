@@ -2,7 +2,7 @@ use specs::prelude::*;
 
 use crate::{
     components::{BlocksTile, Position},
-    map::Map,
+    map::map::Map,
 };
 
 #[derive(Clone, Copy)]
