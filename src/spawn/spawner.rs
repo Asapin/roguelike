@@ -8,9 +8,10 @@ use specs::{
 
 use crate::{
     components::{
-        AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EquipmentSlot,
-        Equippable, HungerClock, HungerState, InflictsDamage, Item, MeleePowerBonus, Monster, Name,
-        Player, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Viewshed,
+        AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EntryTrigger,
+        EquipmentSlot, Equippable, Hidden, HungerClock, HungerState, InflictsDamage, Item,
+        MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged,
+        Renderable, SerializeMe, SingleActivation, Viewshed,
     },
     map::Map,
     rect::Rect,
@@ -99,6 +100,7 @@ pub fn spawn_room(ecs: &mut World, map: &Map, room: &Rect, max_entities: i32) {
                 SpawnEntity::Shield => shield(ecs, x, y, item_counter),
                 SpawnEntity::TowerShield => tower_shield(ecs, x, y, item_counter),
                 SpawnEntity::Ration => rations(ecs, x, y),
+                SpawnEntity::BearTrap => bear_trap(ecs, x, y),
             };
         }
     }
@@ -116,7 +118,8 @@ fn room_table(map_depth: u32) -> RandomTable {
         .add(SpawnEntity::Longsword, map_depth as i32 - 1)
         .add(SpawnEntity::Shield, 3)
         .add(SpawnEntity::TowerShield, map_depth as i32 - 1)
-        .add(SpawnEntity::Ration, 10)
+        .add(SpawnEntity::Ration, 8)
+        .add(SpawnEntity::BearTrap, 2)
 }
 
 fn new_orc(ecs: &mut World, x: u16, y: u16) {
@@ -335,6 +338,26 @@ fn rations(ecs: &mut World, x: u16, y: u16) {
         .with(Item {})
         .with(ProvidesFood {})
         .with(Consumable {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
+fn bear_trap(ecs: &mut World, x: u16, y: u16) {
+    ecs.create_entity()
+        .with(Position { x, y })
+        .with(Renderable {
+            glyph: rltk::to_cp437('^'),
+            fg: RGB::named(rltk::RED),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: "Bear Trap".to_string(),
+        })
+        .with(Hidden {})
+        .with(EntryTrigger {})
+        .with(InflictsDamage { damage: 6 })
+        .with(SingleActivation {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

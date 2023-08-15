@@ -214,6 +214,18 @@ pub struct HungerClock {
 #[derive(Component, Serialize, Deserialize, Clone, Copy)]
 pub struct ProvidesFood {}
 
+#[derive(Component, Serialize, Deserialize, Clone, Copy)]
+pub struct Hidden {}
+
+#[derive(Component, Serialize, Deserialize, Clone, Copy)]
+pub struct EntryTrigger {}
+
+#[derive(Component, Serialize, Deserialize, Clone, Copy)]
+pub struct EntityMoved {}
+
+#[derive(Component, Serialize, Deserialize, Clone, Copy)]
+pub struct SingleActivation {}
+
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
     ecs.register::<Renderable>();
@@ -248,4 +260,8 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<Particle>();
     ecs.register::<HungerClock>();
     ecs.register::<ProvidesFood>();
+    ecs.register::<Hidden>();
+    ecs.register::<EntryTrigger>();
+    ecs.register::<EntityMoved>();
+    ecs.register::<SingleActivation>();
 }

@@ -11,8 +11,9 @@ use specs::{
 use specs::{Entity, Join};
 
 use crate::components::{
-    DefenseBonus, Equippable, Equipped, GameLogSerializationHelper, HungerClock, Lifetime,
-    MeleePowerBonus, Particle, ProvidesFood, WantsToUnequipItem,
+    DefenseBonus, EntityMoved, EntryTrigger, Equippable, Equipped, GameLogSerializationHelper,
+    Hidden, HungerClock, Lifetime, MeleePowerBonus, Particle, ProvidesFood, SingleActivation,
+    WantsToUnequipItem,
 };
 use crate::gamelog::GameLog;
 use crate::level::{MAP_HEIGHT, MAP_WIDTH};
@@ -134,7 +135,11 @@ pub fn save_game(ecs: &mut World) {
             Lifetime,
             Particle,
             HungerClock,
-            ProvidesFood
+            ProvidesFood,
+            Hidden,
+            EntryTrigger,
+            EntityMoved,
+            SingleActivation
         );
     }
 
@@ -190,7 +195,11 @@ pub fn load_game(ecs: &mut World) {
             Lifetime,
             Particle,
             HungerClock,
-            ProvidesFood
+            ProvidesFood,
+            Hidden,
+            EntryTrigger,
+            EntityMoved,
+            SingleActivation
         );
     }
 

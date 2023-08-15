@@ -2,7 +2,8 @@ use rltk::{field_of_view, Point};
 use specs::prelude::*;
 use specs::{System, WriteStorage};
 
-use crate::components::{Player, Position, Viewshed};
+use crate::components::{Hidden, Name, Player, Position, Viewshed};
+use crate::gamelog::GameLog;
 use crate::map::Map;
 
 #[derive(Clone, Copy)]
@@ -15,10 +16,15 @@ impl<'a> System<'a> for VisibilitySystem {
         WriteStorage<'a, Viewshed>,
         WriteStorage<'a, Position>,
         ReadStorage<'a, Player>,
+        WriteStorage<'a, Hidden>,
+        WriteExpect<'a, rltk::RandomNumberGenerator>,
+        WriteExpect<'a, GameLog>,
+        ReadStorage<'a, Name>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut map, entities, mut viewshed, pos, player) = data;
+        let (mut map, entities, mut viewshed, pos, player, mut hidden, mut rng, mut gamelog, names) =
+            data;
         for (ent, viewshed, pos) in (&entities, &mut viewshed, &pos).join() {
             if !viewshed.dirty {
                 continue;
@@ -41,6 +47,20 @@ impl<'a> System<'a> for VisibilitySystem {
                     let idx = map.index_from_xy(vis.x as u16, vis.y as u16);
                     map.revealed_tiles[idx] = true;
                     map.visible_tiles[idx] = true;
+
+                    // Chance to reveal hidden things
+                    for e in map.tile_content[idx].iter() {
+                        if let Some(_hidden) = hidden.get(*e) {
+                            if rng.roll_dice(1, 24) == 1 {
+                                if let Some(name) = names.get(*e) {
+                                    gamelog
+                                        .entries
+                                        .push(format!("You spotted a {}.", name.name));
+                                }
+                                hidden.remove(*e);
+                            }
+                        }
+                    }
                 }
             }
         }

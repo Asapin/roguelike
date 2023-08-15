@@ -13,6 +13,7 @@ pub enum SpawnEntity {
     Shield,
     TowerShield,
     Ration,
+    BearTrap,
 }
 
 pub struct RandomEntry {

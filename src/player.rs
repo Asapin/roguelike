@@ -4,8 +4,8 @@ use std::cmp::{max, min};
 
 use crate::{
     components::{
-        CombatStats, Confusion, HungerClock, HungerState, Item, Monster, Player, Position,
-        Viewshed, WantsToMelee, WantsToPickupItem,
+        CombatStats, Confusion, EntityMoved, HungerClock, HungerState, Item, Monster, Player,
+        Position, Viewshed, WantsToMelee, WantsToPickupItem,
     },
     gamelog::GameLog,
     map::{Map, TileType},
@@ -92,6 +92,7 @@ fn try_move_player(ecs: &mut World, delta_x: i32, delta_y: i32) {
     let mut player_pos = ecs.write_resource::<Point>();
     let entities = ecs.entities();
     let mut wants_to_melee = ecs.write_storage::<WantsToMelee>();
+    let mut entity_moved = ecs.write_storage::<EntityMoved>();
 
     for (entity, _player, pos, viewshed) in
         (&entities, &mut players, &mut positions, &mut viewsheds).join()
@@ -124,6 +125,9 @@ fn try_move_player(ecs: &mut World, delta_x: i32, delta_y: i32) {
             viewshed.dirty = true;
             player_pos.x = pos.x as i32;
             player_pos.y = pos.y as i32;
+            entity_moved
+                .insert(entity, EntityMoved {})
+                .expect("Unable to insert marker");
         }
     }
 }

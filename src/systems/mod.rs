@@ -12,6 +12,7 @@ use self::{
     melee_combat_system::MeleeCombatSystem,
     monster_ai_system::MonsterAI,
     particle_system::ParticleSpawnSystem,
+    trigger_system::TriggerSystem,
     visibility_system::VisibilitySystem,
 };
 
@@ -27,6 +28,7 @@ pub mod melee_combat_system;
 pub mod monster_ai_system;
 pub mod particle_system;
 pub mod saveload_system;
+pub mod trigger_system;
 pub mod visibility_system;
 
 #[derive(Clone, Copy)]
@@ -42,6 +44,7 @@ pub struct Systems {
     item_unequip: ItemUnequipSystem,
     particle_spawn: ParticleSpawnSystem,
     hunger: HungerSystem,
+    trigger: TriggerSystem,
 }
 
 impl Systems {
@@ -57,7 +60,8 @@ impl Systems {
             item_drop: ItemDropSystem {},
             item_unequip: ItemUnequipSystem {},
             particle_spawn: ParticleSpawnSystem {},
-            hunger: HungerSystem,
+            hunger: HungerSystem {},
+            trigger: TriggerSystem {},
         }
     }
 
@@ -67,6 +71,7 @@ impl Systems {
         self.item_drop.run_now(ecs);
         self.visibility.run_now(ecs);
         self.monster_ai.run_now(ecs);
+        self.trigger.run_now(ecs);
         self.map_indexing.run_now(ecs);
         self.melee_combat.run_now(ecs);
         self.damage_system.run_now(ecs);

@@ -2,7 +2,9 @@ use rltk::{Point, Rltk, RGB};
 use specs::{prelude::*, shred::Fetch};
 
 use crate::{
-    components::{CombatStats, HungerClock, HungerState, Name, Player, Position, Renderable},
+    components::{
+        CombatStats, Hidden, HungerClock, HungerState, Name, Player, Position, Renderable,
+    },
     gamelog::GameLog,
     map::{Map, TileType},
 };
@@ -60,10 +62,15 @@ fn draw_map(ctx: &mut Rltk, map: &Fetch<Map>) {
 fn draw_entities(ecs: &World, ctx: &mut Rltk, map: &Fetch<Map>) {
     let positions = ecs.read_storage::<Position>();
     let renderables = ecs.read_storage::<Renderable>();
+    let hidden = ecs.read_storage::<Hidden>();
 
-    let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
-    data.sort_by(|(_, render1), (_, render2)| render2.render_order.cmp(&render1.render_order));
-    for (pos, render) in data.iter() {
+    let mut data = (&positions, &renderables, !&hidden)
+        .join()
+        .collect::<Vec<_>>();
+    data.sort_by(|(_, render1, _), (_, render2, _)| {
+        render2.render_order.cmp(&render1.render_order)
+    });
+    for (pos, render, _hidden) in data.iter() {
         let idx = map.index_from_xy(pos.x, pos.y);
         if map.visible_tiles[idx] {
             ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
@@ -153,6 +160,7 @@ fn draw_ui(ecs: &World, ctx: &mut Rltk, map: &Fetch<Map>) {
 fn draw_tooltip(ecs: &World, ctx: &mut Rltk, map: &Fetch<Map>) {
     let names = ecs.read_storage::<Name>();
     let positions = ecs.read_storage::<Position>();
+    let hidden = ecs.read_storage::<Hidden>();
 
     let mouse_pos = ctx.mouse_pos();
     ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::MAGENTA));
@@ -161,7 +169,7 @@ fn draw_tooltip(ecs: &World, ctx: &mut Rltk, map: &Fetch<Map>) {
     }
 
     let mut tooltip: Vec<String> = Vec::new();
-    for (name, position) in (&names, &positions).join() {
+    for (name, position, _hidden) in (&names, &positions, !&hidden).join() {
         let idx = map.index_from_xy(position.x, position.y);
         if position.x as i32 == mouse_pos.0
             && position.y as i32 == mouse_pos.1
