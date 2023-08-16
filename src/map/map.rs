@@ -4,8 +4,6 @@ use rltk::{Algorithm2D, BaseMap, FontCharType, Point};
 use serde::{Deserialize, Serialize};
 use specs::Entity;
 
-use crate::rect::Rect;
-
 pub const WINDOW_WIDTH: u16 = 80;
 pub const WINDOW_HEIGHT: u16 = 50;
 pub const MAP_WIDTH: u16 = 80;
@@ -25,7 +23,6 @@ pub struct Map {
     pub width: u16,
     pub height: u16,
     pub tiles: Vec<TileType>,
-    pub rooms: Vec<Rect>,
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
     pub blocked: Vec<bool>,
@@ -48,7 +45,6 @@ impl Map {
             width,
             height,
             tiles: vec![TileType::Wall; map_dimensions],
-            rooms: Vec::new(),
             revealed_tiles: vec![false; map_dimensions],
             visible_tiles: vec![false; map_dimensions],
             blocked: vec![true; map_dimensions],

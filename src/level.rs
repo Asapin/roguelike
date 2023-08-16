@@ -4,12 +4,10 @@ use specs::{Entity, Join, World, WorldExt};
 use crate::{
     components::{CombatStats, Equipped, InBackpack, Player, Position, Viewshed},
     gamelog::GameLog,
-    map::{generate_map, map::Map},
+    map::{map::Map, map_builder::MapBuilder, random_builder},
     spawn::spawner,
     systems::particle_system::ParticleBuilder,
 };
-
-const MAX_ENTITIES: i32 = 4;
 
 pub fn new_game(ecs: &mut World) {
     // Remove all existing entities
@@ -21,14 +19,21 @@ pub fn new_game(ecs: &mut World) {
         ecs.delete_entity(target).expect("Unable to delete entity");
     }
 
-    let (worldmap, player_pos) = {
+    let mut map_builder = random_builder(1);
+    {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        generate_map(1, &mut rng)
-    };
+        map_builder.build_map(&mut rng);
+    }
+    map_builder.spawn_entities(ecs);
+    let player_pos = map_builder.get_starting_position();
 
-    ecs.insert(player_pos);
     let player_entity = spawner::player(ecs, player_pos);
+    ecs.insert(player_pos);
     ecs.insert(player_entity);
+
+    ecs.insert(map_builder.get_map());
+    ecs.insert(ParticleBuilder::new());
+
     {
         let mut gamelog = ecs.fetch_mut::<GameLog>();
         gamelog
@@ -43,36 +48,16 @@ pub fn new_game(ecs: &mut World) {
                 .to_string(),
         );
     }
-
-    // Generate new mobs and items
-    for room in worldmap.rooms.iter().skip(1) {
-        spawner::spawn_room(ecs, &worldmap, room, MAX_ENTITIES);
-    }
-
-    ecs.insert(worldmap);
-    ecs.insert(ParticleBuilder::new());
 }
 
 pub fn next_level(ecs: &mut World) {
-    // Generate new world map
-    let (worldmap, player_pos) = {
-        let map = ecs.fetch_mut::<Map>();
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        generate_map(map.depth + 1, &mut rng)
-    };
-
-    ecs.insert(player_pos);
-
-    let player_entity = *ecs.fetch::<Entity>();
-    {
-        let mut position_component = ecs.write_storage::<Position>();
-        let player_position_component = position_component.get_mut(player_entity);
-        if let Some(player_position) = player_position_component {
-            player_position.x = player_pos.x;
-            player_position.y = player_pos.y;
-        }
+    // Delete entities that aren't the player or player's equipment
+    let to_delete = entities_to_remove_on_level_change(ecs);
+    for target in to_delete {
+        ecs.delete_entity(target).expect("Unable to delete entity");
     }
 
+    let player_entity = *ecs.fetch::<Entity>();
     {
         // Mark the player's visibility as dirty
         let mut viewshed_storage = ecs.write_storage::<Viewshed>();
@@ -95,18 +80,25 @@ pub fn next_level(ecs: &mut World) {
         }
     }
 
-    // Delete entities that aren't the player or player's equipment
-    let to_delete = entities_to_remove_on_level_change(ecs);
-    for target in to_delete {
-        ecs.delete_entity(target).expect("Unable to delete entity");
+    // Generate new world map
+    let new_depth = ecs.fetch_mut::<Map>().depth + 1;
+    let mut map_builder = random_builder(new_depth);
+    {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        map_builder.build_map(&mut rng);
     }
-
-    // Generate new mobs and items
-    for room in worldmap.rooms.iter().skip(1) {
-        spawner::spawn_room(ecs, &worldmap, room, MAX_ENTITIES);
+    map_builder.spawn_entities(ecs);
+    let player_pos = map_builder.get_starting_position();
+    ecs.insert(player_pos);
+    ecs.insert(map_builder.get_map());
+    {
+        let mut position_component = ecs.write_storage::<Position>();
+        let player_position_component = position_component.get_mut(player_entity);
+        if let Some(player_position) = player_position_component {
+            player_position.x = player_pos.x;
+            player_position.y = player_pos.y;
+        }
     }
-
-    ecs.insert(worldmap);
 }
 
 fn entities_to_remove_on_level_change(ecs: &mut World) -> Vec<Entity> {

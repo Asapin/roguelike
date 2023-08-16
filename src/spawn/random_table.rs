@@ -16,7 +16,7 @@ pub enum SpawnEntity {
     BearTrap,
 }
 
-pub struct RandomEntry {
+struct RandomEntry {
     entity: SpawnEntity,
     weight: i32,
 }
@@ -33,14 +33,30 @@ pub struct RandomTable {
 }
 
 impl RandomTable {
-    pub fn new() -> Self {
+    pub fn generate_loot_table(map_depth: u32) -> Self {
+        RandomTable::new()
+            .add(SpawnEntity::Goblin, 10)
+            .add(SpawnEntity::Orc, 1 + map_depth as i32)
+            .add(SpawnEntity::HealthPotion, 7)
+            .add(SpawnEntity::FireballScroll, 2 + map_depth as i32)
+            .add(SpawnEntity::ConfusionScroll, 2 + map_depth as i32)
+            .add(SpawnEntity::MagicMissileScroll, 4)
+            .add(SpawnEntity::Dagger, 3)
+            .add(SpawnEntity::Longsword, map_depth as i32 - 1)
+            .add(SpawnEntity::Shield, 3)
+            .add(SpawnEntity::TowerShield, map_depth as i32 - 1)
+            .add(SpawnEntity::Ration, 8)
+            .add(SpawnEntity::BearTrap, 2)
+    }
+
+    fn new() -> Self {
         Self {
             entries: Vec::new(),
             total_weight: 0,
         }
     }
 
-    pub fn add(mut self, entity: SpawnEntity, weight: i32) -> Self {
+    fn add(mut self, entity: SpawnEntity, weight: i32) -> Self {
         if weight > 0 {
             self.total_weight += weight;
             self.entries.push(RandomEntry::new(entity, weight));

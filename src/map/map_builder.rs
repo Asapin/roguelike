@@ -1,13 +1,18 @@
 use std::cmp::{max, min};
 
 use rltk::RandomNumberGenerator;
+use specs::World;
 
 use crate::{components::Position, rect::Rect};
 
 use super::map::{Map, TileType};
 
 pub trait MapBuilder {
-    fn build(new_depth: u32, rng: &mut RandomNumberGenerator) -> (Map, Position);
+    fn new(new_depth: u32) -> Self;
+    fn build_map(&mut self, rng: &mut RandomNumberGenerator);
+    fn spawn_entities(&mut self, ecs: &mut World);
+    fn get_map(&mut self) -> Map;
+    fn get_starting_position(&mut self) -> Position;
 }
 
 pub fn apply_room_to_map(map: &mut Map, room: &Rect) {
