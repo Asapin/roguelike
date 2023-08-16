@@ -1,4 +1,4 @@
-use rltk::{Point, Rltk, VirtualKeyCode, RGB};
+use rltk::{Rltk, VirtualKeyCode, RGB};
 use specs::{prelude::*, Entity, World};
 use std::cmp::{max, min};
 
@@ -25,10 +25,10 @@ pub fn player_input(ecs: &mut World, ctx: &mut Rltk) -> RunState {
             if confused.turns == 0 {
                 confusion.remove(*player);
             }
-            let player_pos = ecs.write_resource::<Point>();
+            let player_pos = ecs.write_resource::<Position>();
             ecs.fetch_mut::<ParticleBuilder>().request(
-                player_pos.x as u16,
-                player_pos.y as u16,
+                player_pos.x,
+                player_pos.y,
                 RGB::named(rltk::MAGENTA),
                 RGB::named(rltk::BLACK),
                 rltk::to_cp437('?'),
@@ -89,7 +89,7 @@ fn try_move_player(ecs: &mut World, delta_x: i32, delta_y: i32) {
     let mut viewsheds = ecs.write_storage::<Viewshed>();
     let combat_stats = ecs.read_storage::<CombatStats>();
     let map = ecs.fetch::<Map>();
-    let mut player_pos = ecs.write_resource::<Point>();
+    let mut player_pos = ecs.write_resource::<Position>();
     let entities = ecs.entities();
     let mut wants_to_melee = ecs.write_storage::<WantsToMelee>();
     let mut entity_moved = ecs.write_storage::<EntityMoved>();
@@ -123,8 +123,8 @@ fn try_move_player(ecs: &mut World, delta_x: i32, delta_y: i32) {
             pos.x = min(map.width - 1, max(0, new_x));
             pos.y = min(map.height - 1, max(0, new_y));
             viewshed.dirty = true;
-            player_pos.x = pos.x as i32;
-            player_pos.y = pos.y as i32;
+            player_pos.x = pos.x;
+            player_pos.y = pos.y;
             entity_moved
                 .insert(entity, EntityMoved {})
                 .expect("Unable to insert marker");
@@ -133,7 +133,7 @@ fn try_move_player(ecs: &mut World, delta_x: i32, delta_y: i32) {
 }
 
 fn pickup(ecs: &mut World) {
-    let player_pos = ecs.fetch::<Point>();
+    let player_pos = ecs.fetch::<Position>();
     let player_entity = ecs.fetch::<Entity>();
     let entities = ecs.entities();
     let items = ecs.read_storage::<Item>();
@@ -142,7 +142,7 @@ fn pickup(ecs: &mut World) {
 
     let mut target_item: Option<Entity> = None;
     for (item_entity, _, position) in (&entities, &items, &positions).join() {
-        if position.x as i32 == player_pos.x && position.y as i32 == player_pos.y {
+        if position.x == player_pos.x && position.y == player_pos.y {
             target_item = Some(item_entity);
         }
     }
@@ -167,9 +167,9 @@ fn pickup(ecs: &mut World) {
 }
 
 fn try_next_level(ecs: &mut World) -> bool {
-    let player_pos = ecs.fetch::<Point>();
+    let player_pos = ecs.fetch::<Position>();
     let map = ecs.fetch::<Map>();
-    let player_idx = map.index_from_xy(player_pos.x as u16, player_pos.y as u16);
+    let player_idx = map.index_from_xy(player_pos.x, player_pos.y);
     if map.tiles[player_idx] == TileType::DownStairs {
         true
     } else {

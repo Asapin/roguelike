@@ -1,4 +1,4 @@
-use rltk::{console, Point, Rltk, RGB};
+use rltk::{console, Rltk, RGB};
 use specs::{Entity, World, WorldExt};
 
 use crate::{
@@ -37,7 +37,7 @@ pub fn target_menu(ecs: &mut World, ctx: &mut Rltk, range: u16, item: Entity) ->
 
 fn show_target_menu(ecs: &mut World, ctx: &mut Rltk, range: u16) -> TargetSelectResult {
     let player_entity = ecs.fetch::<Entity>();
-    let player_pos = ecs.fetch::<Point>();
+    let player_pos = ecs.fetch::<Position>();
     let viewsheds = ecs.read_storage::<Viewshed>();
 
     let viewshed = viewsheds.get(*player_entity);
@@ -70,7 +70,7 @@ fn show_target_menu(ecs: &mut World, ctx: &mut Rltk, range: u16) -> TargetSelect
 fn draw_menu<'a>(
     ctx: &mut Rltk,
     viewshed: &'a Viewshed,
-    player_pos: Point,
+    player_pos: Position,
     range: u16,
     mouse_pos: (i32, i32),
 ) -> bool {
@@ -85,7 +85,7 @@ fn draw_menu<'a>(
     // Highlight available target cells
     let mut available_cells = Vec::new();
     for idx in viewshed.visible_tiles.iter() {
-        let distance = rltk::DistanceAlg::Pythagoras.distance2d(player_pos, *idx);
+        let distance = rltk::DistanceAlg::Pythagoras.distance2d(player_pos.into(), *idx);
         if distance < range as f32 {
             ctx.set_bg(idx.x, idx.y, RGB::named(rltk::BLUE));
             available_cells.push(idx);

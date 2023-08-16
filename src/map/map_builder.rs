@@ -2,12 +2,12 @@ use std::cmp::{max, min};
 
 use rltk::RandomNumberGenerator;
 
-use crate::rect::Rect;
+use crate::{components::Position, rect::Rect};
 
 use super::map::{Map, TileType};
 
 pub trait MapBuilder {
-    fn build(new_depth: u32, rng: &mut RandomNumberGenerator) -> Map;
+    fn build(new_depth: u32, rng: &mut RandomNumberGenerator) -> (Map, Position);
 }
 
 pub fn apply_room_to_map(map: &mut Map, room: &Rect) {

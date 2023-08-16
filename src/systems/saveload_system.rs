@@ -1,7 +1,6 @@
 use std::fs::{self, File};
 use std::path::Path;
 
-use rltk::Point;
 use specs::{
     error::NoError,
     saveload::{
@@ -222,8 +221,8 @@ pub fn load_game(ecs: &mut World) {
         let player = ecs.read_storage::<Player>();
         let position = ecs.read_storage::<Position>();
         for (e, _p, pos) in (&entities, &player, &position).join() {
-            let mut player_pos = ecs.write_resource::<rltk::Point>();
-            *player_pos = Point::new(pos.x, pos.y);
+            let mut player_pos = ecs.write_resource::<Position>();
+            *player_pos = *pos;
             let mut player_resource = ecs.write_resource::<Entity>();
             *player_resource = e;
         }

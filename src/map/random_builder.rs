@@ -1,4 +1,4 @@
-use crate::rect::Rect;
+use crate::{components::Position, rect::Rect};
 
 use super::{
     map::{Map, TileType},
@@ -12,7 +12,7 @@ const MAX_ROOM_SIZE: u8 = 10;
 pub struct RandomMapBuilder;
 
 impl MapBuilder for RandomMapBuilder {
-    fn build(new_depth: u32, rng: &mut rltk::RandomNumberGenerator) -> Map {
+    fn build(new_depth: u32, rng: &mut rltk::RandomNumberGenerator) -> (Map, Position) {
         let mut map = Map::empty_map(new_depth);
 
         for _ in 0..ROOM_COUNT {
@@ -49,6 +49,14 @@ impl MapBuilder for RandomMapBuilder {
         let stairs_idx = map.index_from_xy(stairs_position.0, stairs_position.1);
         map.tiles[stairs_idx] = TileType::DownStairs;
 
-        map
+        let (player_x, player_y) = map.rooms[0].center();
+
+        (
+            map,
+            Position {
+                x: player_x,
+                y: player_y,
+            },
+        )
     }
 }

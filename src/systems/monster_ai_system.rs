@@ -15,7 +15,7 @@ pub struct MonsterAI;
 impl<'a> System<'a> for MonsterAI {
     type SystemData = (
         WriteExpect<'a, Map>,
-        ReadExpect<'a, Point>,
+        ReadExpect<'a, Position>,
         ReadExpect<'a, Entity>,
         ReadExpect<'a, RunState>,
         Entities<'a>,
@@ -67,8 +67,8 @@ impl<'a> System<'a> for MonsterAI {
                 continue;
             }
 
-            let distance =
-                rltk::DistanceAlg::Pythagoras.distance2d(Point::new(pos.x, pos.y), *player_pos);
+            let player_point: Point = (*player_pos).into();
+            let distance = rltk::DistanceAlg::Pythagoras.distance2d(pos.into(), player_point);
             if distance < 1.5 {
                 wants_to_melee
                     .insert(
@@ -78,10 +78,10 @@ impl<'a> System<'a> for MonsterAI {
                         },
                     )
                     .expect("Unable to insert attack");
-            } else if viewshed.visible_tiles.contains(&*player_pos) {
+            } else if viewshed.visible_tiles.contains(&player_point) {
                 let path = rltk::a_star_search(
                     map.index_from_xy(pos.x, pos.y),
-                    map.index_from_xy(player_pos.x as u16, player_pos.y as u16),
+                    map.index_from_xy(player_pos.x, player_pos.y),
                     &mut *map,
                 );
                 if path.success && path.steps.len() > 1 {

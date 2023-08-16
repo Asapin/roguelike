@@ -19,12 +19,9 @@ use crate::{
 
 use super::random_table::{RandomTable, SpawnEntity};
 
-pub fn player(ecs: &mut World, player_x: u16, player_y: u16) -> Entity {
+pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
     ecs.create_entity()
-        .with(Position {
-            x: player_x,
-            y: player_y,
-        })
+        .with(player_pos)
         .with(Renderable {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),

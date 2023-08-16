@@ -1,10 +1,10 @@
-use rltk::{Point, RandomNumberGenerator};
+use rltk::RandomNumberGenerator;
 use specs::{Entity, Join, World, WorldExt};
 
 use crate::{
     components::{CombatStats, Equipped, InBackpack, Player, Position, Viewshed},
     gamelog::GameLog,
-    map::{map::Map, generate_map},
+    map::{generate_map, map::Map},
     spawn::spawner,
     systems::particle_system::ParticleBuilder,
 };
@@ -21,15 +21,13 @@ pub fn new_game(ecs: &mut World) {
         ecs.delete_entity(target).expect("Unable to delete entity");
     }
 
-    let worldmap = {
+    let (worldmap, player_pos) = {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         generate_map(1, &mut rng)
     };
 
-    let (player_x, player_y) = worldmap.rooms[0].center();
-    ecs.insert(Point::new(player_x, player_y));
-
-    let player_entity = spawner::player(ecs, player_x, player_y);
+    ecs.insert(player_pos);
+    let player_entity = spawner::player(ecs, player_pos);
     ecs.insert(player_entity);
     {
         let mut gamelog = ecs.fetch_mut::<GameLog>();
@@ -57,22 +55,21 @@ pub fn new_game(ecs: &mut World) {
 
 pub fn next_level(ecs: &mut World) {
     // Generate new world map
-    let worldmap = {
+    let (worldmap, player_pos) = {
         let map = ecs.fetch_mut::<Map>();
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         generate_map(map.depth + 1, &mut rng)
     };
 
-    let (player_x, player_y) = worldmap.rooms[0].center();
-    ecs.insert(Point::new(player_x, player_y));
+    ecs.insert(player_pos);
 
     let player_entity = *ecs.fetch::<Entity>();
     {
         let mut position_component = ecs.write_storage::<Position>();
         let player_position_component = position_component.get_mut(player_entity);
         if let Some(player_position) = player_position_component {
-            player_position.x = player_x;
-            player_position.y = player_y;
+            player_position.x = player_pos.x;
+            player_position.y = player_pos.y;
         }
     }
 

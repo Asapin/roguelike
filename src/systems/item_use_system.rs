@@ -1,4 +1,4 @@
-use rltk::{Point, RGB};
+use rltk::RGB;
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::{
@@ -184,11 +184,8 @@ fn targets(
         }
         Some(area) => {
             // AoE
-            let mut blast_tiles = rltk::field_of_view(
-                Point::new(target_position.x, target_position.y),
-                area.radius as i32,
-                &*map,
-            );
+            let mut blast_tiles =
+                rltk::field_of_view(target_position.into(), area.radius as i32, &*map);
             blast_tiles.retain(|p| {
                 p.x > 0 && p.x < map.width as i32 - 1 && p.y > 0 && p.y < map.height as i32
             });

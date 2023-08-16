@@ -1,4 +1,4 @@
-use rltk::RGB;
+use rltk::{Point, RGB};
 use serde::{Deserialize, Serialize};
 use specs::error::NoError;
 use specs::prelude::*;
@@ -12,6 +12,33 @@ use crate::map::map::Map;
 pub struct Position {
     pub x: u16,
     pub y: u16,
+}
+
+impl From<&Position> for Point {
+    fn from(value: &Position) -> Self {
+        Point {
+            x: value.x as i32,
+            y: value.y as i32,
+        }
+    }
+}
+
+impl From<&mut Position> for Point {
+    fn from(value: &mut Position) -> Self {
+        Point {
+            x: value.x as i32,
+            y: value.y as i32,
+        }
+    }
+}
+
+impl From<Position> for Point {
+    fn from(value: Position) -> Self {
+        Point {
+            x: value.x as i32,
+            y: value.y as i32,
+        }
+    }
 }
 
 #[derive(Component, ConvertSaveload, Clone)]
