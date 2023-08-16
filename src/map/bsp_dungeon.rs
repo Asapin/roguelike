@@ -74,10 +74,6 @@ impl MapBuilder for BspDungeonBuilder {
         let (stairs_x, stairs_y) = self.rooms[self.rooms.len() - 1].center();
         let stairs_idx = self.map.index_from_xy(stairs_x, stairs_y);
         self.map.tiles[stairs_idx] = TileType::DownStairs;
-
-        for tile in self.map.revealed_tiles.iter_mut() {
-            *tile = true;
-        }
     }
 
     fn spawn_entities(&mut self, ecs: &mut specs::World) {

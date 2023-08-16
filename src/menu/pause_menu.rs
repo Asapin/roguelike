@@ -58,8 +58,11 @@ fn print_pause_menu(
     mut current_selection: PauseMenuSelection,
     save_exists: bool,
 ) {
+    let mut y = 13;
+    ctx.draw_box(30, y, 19, 11, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK));
+    y += 2;
     ctx.print_color_centered(
-        15,
+        y,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         "Pause",
@@ -77,14 +80,15 @@ fn print_pause_menu(
         PauseMenuSelection::Quit => quit_game_fg = RGB::named(rltk::MAGENTA),
     };
 
-    ctx.print_color_centered(24, restart_game_fg, RGB::named(rltk::BLACK), "Restart Game");
-    ctx.print_color_centered(25, save_game_fg, RGB::named(rltk::BLACK), "Save Game");
+    y += 3;
+    ctx.print_color_centered(y, restart_game_fg, RGB::named(rltk::BLACK), "Restart Game");
+    ctx.print_color_centered(y + 1, save_game_fg, RGB::named(rltk::BLACK), "Save Game");
     if save_exists {
-        ctx.print_color_centered(26, load_game_fg, RGB::named(rltk::BLACK), "Load Game");
+        ctx.print_color_centered(y + 2, load_game_fg, RGB::named(rltk::BLACK), "Load Game");
     } else if current_selection == PauseMenuSelection::LoadGame {
         current_selection = PauseMenuSelection::SaveGame;
     }
-    ctx.print_color_centered(27, quit_game_fg, RGB::named(rltk::BLACK), "Quit");
+    ctx.print_color_centered(y + 4, quit_game_fg, RGB::named(rltk::BLACK), "Quit");
 }
 
 fn select_menu(

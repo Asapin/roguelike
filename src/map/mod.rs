@@ -36,7 +36,9 @@ pub fn apply_room_to_map(map: &mut Map, room: &Rect) {
 }
 
 pub fn apply_horizontal_tunnel(map: &mut Map, x1: u16, x2: u16, y: u16) {
-    for x in min(x1, x2)..=max(x1, x2) {
+    let min_x = min(x1, x2);
+    let max_x = max(x1, x2);
+    for x in min_x..=max_x {
         let idx = map.index_from_xy(x, y);
         if idx > 0 && idx < map.tiles.len() {
             map.tiles[idx] = TileType::Floor;
@@ -45,7 +47,9 @@ pub fn apply_horizontal_tunnel(map: &mut Map, x1: u16, x2: u16, y: u16) {
 }
 
 pub fn apply_vertical_tunnel(map: &mut Map, y1: u16, y2: u16, x: u16) {
-    for y in min(y1, y2)..=max(y1, y2) {
+    let min_y = min(y1, y2);
+    let max_y = max(y1, y2);
+    for y in min_y..=max_y {
         let idx = map.index_from_xy(x, y);
         if idx > 0 && idx < map.tiles.len() {
             map.tiles[idx] = TileType::Floor;

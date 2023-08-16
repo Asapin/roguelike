@@ -19,7 +19,7 @@ pub fn new_game(ecs: &mut World) {
     ecs.insert(ParticleBuilder::new());
 
     {
-        let mut gamelog = ecs.fetch_mut::<GameLog>();
+        let mut gamelog = GameLog { entries: vec![] };
         gamelog
             .entries
             .push("While roaming in the wilds, you stumbled upon a mysterious cave.".to_string());
@@ -31,6 +31,7 @@ pub fn new_game(ecs: &mut World) {
             "But as soon as you enter the cave, the entrance colapses trapping you inside."
                 .to_string(),
         );
+        ecs.insert(gamelog);
     }
 }
 

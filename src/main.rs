@@ -2,7 +2,6 @@ use specs::{prelude::*, saveload::SimpleMarkerAllocator};
 
 use crate::{
     components::SerializeMe,
-    gamelog::GameLog,
     menu::main_menu,
     state::{GlobalState, State},
 };
@@ -34,7 +33,6 @@ fn main() -> rltk::BError {
     let rng = rltk::RandomNumberGenerator::new();
     gs.ecs.insert(rng);
 
-    gs.ecs.insert(GameLog { entries: vec![] });
     gs.ecs.insert(GlobalState::MainMenu {
         selected_menu: main_menu::MainMenuSelection::NewGame,
     });
