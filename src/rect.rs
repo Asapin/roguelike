@@ -9,7 +9,7 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub fn new(x: u16, y: u16, w: u8, h: u8) -> Self {
+    pub fn new(x: u16, y: u16, w: u16, h: u16) -> Self {
         Self {
             x1: x,
             x2: x + w as u16,
@@ -24,5 +24,17 @@ impl Rect {
 
     pub fn center(&self) -> (u16, u16) {
         ((self.x1 + self.x2) / 2, (self.y1 + self.y2) / 2)
+    }
+
+    pub fn width(&self) -> u16 {
+        self.x2 - self.x1
+    }
+
+    pub fn height(&self) -> u16 {
+        self.y2 - self.y1
+    }
+
+    pub fn area(&self) -> u32 {
+        self.width() as u32 * self.height() as u32
     }
 }

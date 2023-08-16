@@ -1,4 +1,4 @@
-use specs::{Entity, Join, World, WorldExt};
+use specs::{Entity, World, WorldExt};
 
 use crate::{
     components::CombatStats,
@@ -90,11 +90,5 @@ fn player_is_dead(ecs: &mut World) -> bool {
 }
 
 fn game_over_cleanup(ecs: &mut World) {
-    let mut to_delete = Vec::new();
-    for e in ecs.entities().join() {
-        to_delete.push(e);
-    }
-    for del in to_delete {
-        ecs.delete_entity(del).expect("Deletion failed");
-    }
+    ecs.delete_all();
 }

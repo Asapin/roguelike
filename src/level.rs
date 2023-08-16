@@ -4,34 +4,18 @@ use specs::{Entity, Join, World, WorldExt};
 use crate::{
     components::{CombatStats, Equipped, InBackpack, Player, Position, Viewshed},
     gamelog::GameLog,
-    map::{map::Map, map_builder::MapBuilder, random_builder},
+    map::{map::Map, random_builder},
     spawn::spawner,
     systems::particle_system::ParticleBuilder,
 };
 
 pub fn new_game(ecs: &mut World) {
     // Remove all existing entities
-    let to_delete: Vec<Entity> = {
-        let entities = ecs.entities();
-        entities.join().collect()
-    };
-    for target in to_delete {
-        ecs.delete_entity(target).expect("Unable to delete entity");
-    }
+    ecs.delete_all();
 
-    let mut map_builder = random_builder(1);
-    {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        map_builder.build_map(&mut rng);
-    }
-    map_builder.spawn_entities(ecs);
-    let player_pos = map_builder.get_starting_position();
-
+    let player_pos = generate_map(1, ecs);
     let player_entity = spawner::player(ecs, player_pos);
-    ecs.insert(player_pos);
     ecs.insert(player_entity);
-
-    ecs.insert(map_builder.get_map());
     ecs.insert(ParticleBuilder::new());
 
     {
@@ -52,11 +36,7 @@ pub fn new_game(ecs: &mut World) {
 
 pub fn next_level(ecs: &mut World) {
     // Delete entities that aren't the player or player's equipment
-    let to_delete = entities_to_remove_on_level_change(ecs);
-    for target in to_delete {
-        ecs.delete_entity(target).expect("Unable to delete entity");
-    }
-
+    remove_entities_on_level_change(ecs);
     let player_entity = *ecs.fetch::<Entity>();
     {
         // Mark the player's visibility as dirty
@@ -82,15 +62,7 @@ pub fn next_level(ecs: &mut World) {
 
     // Generate new world map
     let new_depth = ecs.fetch_mut::<Map>().depth + 1;
-    let mut map_builder = random_builder(new_depth);
-    {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        map_builder.build_map(&mut rng);
-    }
-    map_builder.spawn_entities(ecs);
-    let player_pos = map_builder.get_starting_position();
-    ecs.insert(player_pos);
-    ecs.insert(map_builder.get_map());
+    let player_pos = generate_map(new_depth, ecs);
     {
         let mut position_component = ecs.write_storage::<Position>();
         let player_position_component = position_component.get_mut(player_entity);
@@ -101,40 +73,59 @@ pub fn next_level(ecs: &mut World) {
     }
 }
 
-fn entities_to_remove_on_level_change(ecs: &mut World) -> Vec<Entity> {
-    let entities = ecs.entities();
-    let player = ecs.read_storage::<Player>();
-    let backpack = ecs.read_storage::<InBackpack>();
-    let player_entity = ecs.fetch::<Entity>();
-    let equipped = ecs.read_storage::<Equipped>();
+fn generate_map(new_depth: u32, ecs: &mut World) -> Position {
+    let mut map_builder = {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        random_builder(new_depth, &mut rng)
+    };
+    {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        map_builder.build_map(&mut rng);
+    }
+    map_builder.spawn_entities(ecs);
+    let player_pos = map_builder.get_starting_position();
+    ecs.insert(player_pos);
+    ecs.insert(map_builder.get_map());
+    player_pos
+}
 
+fn remove_entities_on_level_change(ecs: &mut World) {
     let mut to_delete: Vec<Entity> = Vec::new();
-    for entity in entities.join() {
-        let mut should_delete = true;
+    {
+        let entities = ecs.entities();
+        let player = ecs.read_storage::<Player>();
+        let backpack = ecs.read_storage::<InBackpack>();
+        let player_entity = ecs.fetch::<Entity>();
+        let equipped = ecs.read_storage::<Equipped>();
 
-        // Don't delete the player
-        if player.contains(entity) {
-            should_delete = false;
-        }
+        for entity in entities.join() {
+            let mut should_delete = true;
 
-        // Don't delete items from player's backpack
-        if let Some(bp) = backpack.get(entity) {
-            if bp.owner == *player_entity {
+            // Don't delete the player
+            if player.contains(entity) {
                 should_delete = false;
             }
-        }
 
-        // Don't delete equipped items
-        if let Some(eq) = equipped.get(entity) {
-            if eq.owner == *player_entity {
-                should_delete = false;
+            // Don't delete items from player's backpack
+            if let Some(bp) = backpack.get(entity) {
+                if bp.owner == *player_entity {
+                    should_delete = false;
+                }
             }
-        }
 
-        if should_delete {
-            to_delete.push(entity);
+            // Don't delete equipped items
+            if let Some(eq) = equipped.get(entity) {
+                if eq.owner == *player_entity {
+                    should_delete = false;
+                }
+            }
+
+            if should_delete {
+                to_delete.push(entity);
+            }
         }
     }
-
-    to_delete
+    for target in to_delete {
+        ecs.delete_entity(target).expect("Unable to delete entity");
+    }
 }
