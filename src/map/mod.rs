@@ -6,10 +6,12 @@ use crate::{components::Position, rect::Rect};
 
 use self::{
     bsp_dungeon::BspDungeonBuilder,
+    bsp_interior::BspInteriorBuilder,
     map::{Map, TileType},
 };
 
 pub mod bsp_dungeon;
+pub mod bsp_interior;
 pub mod map;
 
 pub trait MapBuilder {
@@ -22,7 +24,8 @@ pub trait MapBuilder {
 pub fn random_builder(new_depth: u32, rng: &mut RandomNumberGenerator) -> Box<dyn MapBuilder> {
     let builder_idx = rng.roll_dice(1, 2) - 1;
     match builder_idx {
-        _ => Box::new(BspDungeonBuilder::new(new_depth)),
+        1 => Box::new(BspDungeonBuilder::new(new_depth)),
+        _ => Box::new(BspInteriorBuilder::new(new_depth)),
     }
 }
 

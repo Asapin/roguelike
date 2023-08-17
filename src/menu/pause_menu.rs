@@ -59,7 +59,14 @@ fn print_pause_menu(
     save_exists: bool,
 ) {
     let mut y = 13;
-    ctx.draw_box(30, y, 19, 11, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK));
+    ctx.draw_box(
+        30,
+        y,
+        19,
+        11,
+        RGB::named(rltk::WHITE),
+        RGB::named(rltk::BLACK),
+    );
     y += 2;
     ctx.print_color_centered(
         y,
