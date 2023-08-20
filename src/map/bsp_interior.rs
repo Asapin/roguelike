@@ -8,7 +8,7 @@ use super::{
     MapBuilder,
 };
 
-const MAX_ENTITIES: i32 = 4;
+const MAX_ENTITIES: u16 = 4;
 const MIN_LEAF_WIDTH: u16 = 8;
 const MIN_LEAF_HEIGHT: u16 = 8;
 

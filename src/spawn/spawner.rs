@@ -1,4 +1,4 @@
-use std::collections::{hash_map::Entry, HashMap};
+use std::collections::HashMap;
 
 use rltk::{RandomNumberGenerator, RGB};
 use specs::{
@@ -13,7 +13,7 @@ use crate::{
         MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged,
         Renderable, SerializeMe, SingleActivation, Viewshed,
     },
-    map::map::Map,
+    map::map::{Map, TileType},
     rect::Rect,
 };
 
@@ -52,55 +52,73 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
 }
 
 /// Fill rooms with stuff!
-pub fn spawn_room(ecs: &mut World, map: &Map, room: &Rect, max_entities: i32) {
-    let spawn_table = RandomTable::generate_loot_table(map.depth);
-    let mut spawn_points = HashMap::new();
-    {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        let num_spawns = rng.roll_dice(1, max_entities + 3) + (map.depth - 1) as i32 - 3;
-
-        // Generate spawn points for entities
-        for _ in 0..num_spawns {
-            let mut added = false;
-            let mut tries = 0;
-            while !added && tries < 20 {
-                let room_width = (room.x2 - room.x1) as i32;
-                let room_height = (room.y2 - room.y1) as i32;
-                let x = (room.x1 as i32 + rng.roll_dice(1, room_width)) as u16;
-                let y = (room.y1 as i32 + rng.roll_dice(1, room_height)) as u16;
-                let idx = map.index_from_xy(x, y);
-                if let Entry::Vacant(e) = spawn_points.entry(idx) {
-                    e.insert(spawn_table.roll(&mut rng));
-                    added = true;
-                } else {
-                    tries += 1;
-                }
+pub fn spawn_room(ecs: &mut World, map: &Map, room: &Rect, max_entities: u16) {
+    let mut possible_targets = Vec::new();
+    for y in room.y1 + 1..room.y2 {
+        for x in room.x1 + 1..room.x2 {
+            let idx = map.index_from_xy(x, y);
+            if map.tiles[idx] == TileType::Floor {
+                possible_targets.push(idx);
             }
         }
     }
 
-    // Spawn entities
-    let mut item_counter = 0;
-    for (idx, spawn) in spawn_points.into_iter() {
-        item_counter += 1;
-        let (x, y) = map.xy_from_index(&idx);
-        if let Some(spawn) = spawn {
-            match spawn {
-                SpawnEntity::Goblin => new_goblin(ecs, x, y),
-                SpawnEntity::Orc => new_orc(ecs, x, y),
-                SpawnEntity::HealthPotion => health_potion(ecs, x, y),
-                SpawnEntity::FireballScroll => fireball_scroll(ecs, x, y),
-                SpawnEntity::ConfusionScroll => confusion_scroll(ecs, x, y),
-                SpawnEntity::MagicMissileScroll => magic_missile_scroll(ecs, x, y),
-                SpawnEntity::Dagger => dagger(ecs, x, y, item_counter),
-                SpawnEntity::Longsword => longsword(ecs, x, y, item_counter),
-                SpawnEntity::Shield => shield(ecs, x, y, item_counter),
-                SpawnEntity::TowerShield => tower_shield(ecs, x, y, item_counter),
-                SpawnEntity::Ration => rations(ecs, x, y),
-                SpawnEntity::BearTrap => bear_trap(ecs, x, y),
+    //TODO
+    spawn_region(ecs, &possible_targets, map, max_entities);
+}
+
+pub fn spawn_region(ecs: &mut World, possible_targets: &[usize], map: &Map, max_entities: u16) {
+    let spawn_table = RandomTable::generate_loot_table(map.depth);
+    let mut spawn_points = HashMap::new();
+    let mut areas = Vec::from(possible_targets);
+
+    {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        let num_spawns = u32::min(
+            areas.len() as u32,
+            rng.roll_dice(1, max_entities as i32) as u32,
+        );
+        if num_spawns == 0 {
+            return;
+        }
+
+        for _ in 0..num_spawns {
+            let array_index = if areas.len() == 1 {
+                0
+            } else {
+                rng.roll_dice(1, areas.len() as i32) as usize - 1
             };
+            let map_idx = areas[array_index];
+            spawn_points.insert(map_idx, spawn_table.roll(&mut rng));
+            areas.remove(array_index);
         }
     }
+
+    for (idx, entity) in spawn_points {
+        spawn_entity(ecs, entity, idx, map)
+    }
+}
+
+fn spawn_entity(ecs: &mut World, entity: Option<SpawnEntity>, idx: usize, map: &Map) {
+    let entity = match entity {
+        None => return,
+        Some(e) => e,
+    };
+    let (x, y) = map.xy_from_index(&idx);
+    match entity {
+        SpawnEntity::Goblin => new_goblin(ecs, x, y),
+        SpawnEntity::Orc => new_orc(ecs, x, y),
+        SpawnEntity::HealthPotion => health_potion(ecs, x, y),
+        SpawnEntity::FireballScroll => fireball_scroll(ecs, x, y),
+        SpawnEntity::ConfusionScroll => confusion_scroll(ecs, x, y),
+        SpawnEntity::MagicMissileScroll => magic_missile_scroll(ecs, x, y),
+        SpawnEntity::Dagger => dagger(ecs, x, y),
+        SpawnEntity::Longsword => longsword(ecs, x, y),
+        SpawnEntity::Shield => shield(ecs, x, y),
+        SpawnEntity::TowerShield => tower_shield(ecs, x, y),
+        SpawnEntity::Ration => rations(ecs, x, y),
+        SpawnEntity::BearTrap => bear_trap(ecs, x, y),
+    };
 }
 
 fn new_orc(ecs: &mut World, x: u16, y: u16) {
@@ -220,7 +238,7 @@ fn confusion_scroll(ecs: &mut World, x: u16, y: u16) {
         .build();
 }
 
-fn dagger(ecs: &mut World, x: u16, y: u16, counter: i32) {
+fn dagger(ecs: &mut World, x: u16, y: u16) {
     ecs.create_entity()
         .with(Position { x, y })
         .with(Renderable {
@@ -230,7 +248,7 @@ fn dagger(ecs: &mut World, x: u16, y: u16, counter: i32) {
             render_order: 2,
         })
         .with(Name {
-            name: format!("Dagger {}", counter),
+            name: "Dagger".to_string(),
         })
         .with(Item {})
         .with(Equippable {
@@ -241,7 +259,7 @@ fn dagger(ecs: &mut World, x: u16, y: u16, counter: i32) {
         .build();
 }
 
-fn longsword(ecs: &mut World, x: u16, y: u16, counter: i32) {
+fn longsword(ecs: &mut World, x: u16, y: u16) {
     ecs.create_entity()
         .with(Position { x, y })
         .with(Renderable {
@@ -251,7 +269,7 @@ fn longsword(ecs: &mut World, x: u16, y: u16, counter: i32) {
             render_order: 2,
         })
         .with(Name {
-            name: format!("Longsword {}", counter),
+            name: "Longsword".to_string(),
         })
         .with(Item {})
         .with(Equippable {
@@ -262,7 +280,7 @@ fn longsword(ecs: &mut World, x: u16, y: u16, counter: i32) {
         .build();
 }
 
-fn shield(ecs: &mut World, x: u16, y: u16, counter: i32) {
+fn shield(ecs: &mut World, x: u16, y: u16) {
     ecs.create_entity()
         .with(Position { x, y })
         .with(Renderable {
@@ -272,7 +290,7 @@ fn shield(ecs: &mut World, x: u16, y: u16, counter: i32) {
             render_order: 2,
         })
         .with(Name {
-            name: format!("Shield {}", counter),
+            name: "Shield".to_string(),
         })
         .with(Item {})
         .with(Equippable {
@@ -283,7 +301,7 @@ fn shield(ecs: &mut World, x: u16, y: u16, counter: i32) {
         .build();
 }
 
-fn tower_shield(ecs: &mut World, x: u16, y: u16, counter: i32) {
+fn tower_shield(ecs: &mut World, x: u16, y: u16) {
     ecs.create_entity()
         .with(Position { x, y })
         .with(Renderable {
@@ -293,7 +311,7 @@ fn tower_shield(ecs: &mut World, x: u16, y: u16, counter: i32) {
             render_order: 2,
         })
         .with(Name {
-            name: format!("Tower Shield {}", counter),
+            name: "Tower Shield {}".to_string(),
         })
         .with(Item {})
         .with(Equippable {

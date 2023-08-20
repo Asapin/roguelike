@@ -47,7 +47,7 @@ impl Map {
             tiles: vec![TileType::Wall; map_dimensions],
             revealed_tiles: vec![false; map_dimensions],
             visible_tiles: vec![false; map_dimensions],
-            blocked: vec![true; map_dimensions],
+            blocked: vec![false; map_dimensions],
             depth: new_depth,
             bloodstains: HashSet::new(),
             tile_content: vec![Vec::new(); map_dimensions],
@@ -136,8 +136,7 @@ impl BaseMap for Map {
 
     fn get_available_exits(&self, idx: usize) -> rltk::SmallVec<[(usize, f32); 10]> {
         let mut exits = rltk::SmallVec::new();
-        let x = (idx % self.width as usize) as u16;
-        let y = (idx / self.width as usize) as u16;
+        let (x, y) = self.xy_from_index(&idx);
         let w = self.width as usize;
 
         // Cardinal directions
