@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 
-use rltk::{FastNoise, RandomNumberGenerator};
+use rltk::RandomNumberGenerator;
 
 use crate::{components::Position, spawn::spawner::spawn_region};
 
 use super::{
+    generate_voronoi_spawn_regions,
     map::{Map, TileType},
-    MapBuilder,
+    remove_unreachable_areas, MapBuilder,
 };
 
 const GENERATION_ITERATIONS: u8 = 15;
@@ -34,7 +35,7 @@ impl MapBuilder for CellularAutomataBuilder {
         }
 
         self.polish_and_generate_exit();
-        self.generate_noise_areas(rng);
+        self.noise_areas = generate_voronoi_spawn_regions(&self.map, rng);
     }
 
     fn spawn_entities(&mut self, ecs: &mut specs::World) {
@@ -154,53 +155,7 @@ impl CellularAutomataBuilder {
     fn polish_and_generate_exit(&mut self) {
         let starting_pos = self.starting_position;
         let start_idx = self.map.index_from_xy(starting_pos.x, starting_pos.y);
-        let poi: Vec<usize> = vec![start_idx];
-        let dijkstra_map =
-            rltk::DijkstraMap::new(self.map.width, self.map.height, &poi, &self.map, 200.0);
-        let (mut exit_idx, mut exit_distance) = (start_idx, 0.0f32);
-        for (i, tile) in self.map.tiles.iter_mut().enumerate() {
-            if *tile != TileType::Floor {
-                continue;
-            }
-            let distance_to_start = dijkstra_map.map[i];
-            if distance_to_start == f32::MAX {
-                // We can't pathfind to this tile - so make it a wall
-                *tile = TileType::Wall;
-            } else {
-                if distance_to_start > exit_distance {
-                    exit_distance = distance_to_start;
-                    exit_idx = i;
-                }
-            }
-        }
-
+        let exit_idx = remove_unreachable_areas(&mut self.map, start_idx);
         self.map.tiles[exit_idx] = TileType::DownStairs;
-    }
-
-    fn generate_noise_areas(&mut self, rng: &mut RandomNumberGenerator) {
-        let mut noise = FastNoise::seeded(rng.roll_dice(1, u16::MAX as i32) as u64);
-        noise.set_noise_type(rltk::NoiseType::Cellular);
-        noise.set_frequency(0.08);
-        noise.set_cellular_distance_function(rltk::CellularDistanceFunction::Manhattan);
-
-        for y in 1..self.map.height - 1 {
-            for x in 1..self.map.width - 1 {
-                let idx = self.map.index_from_xy(x, y);
-                if self.map.tiles[idx] != TileType::Floor {
-                    continue;
-                }
-                let cell_value_f = noise.get_noise(x as f32, y as f32) * 10240.0;
-                let cell_value = cell_value_f as i32;
-
-                match self.noise_areas.get_mut(&cell_value) {
-                    Some(entry) => {
-                        entry.push(idx);
-                    }
-                    None => {
-                        self.noise_areas.insert(cell_value, vec![idx]);
-                    }
-                };
-            }
-        }
     }
 }
