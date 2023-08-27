@@ -1,4 +1,4 @@
-use std::{collections::HashMap, process::id};
+use std::collections::HashMap;
 
 use rltk::RandomNumberGenerator;
 
