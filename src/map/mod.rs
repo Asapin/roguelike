@@ -13,6 +13,7 @@ use self::{
     cellular_automata::CellularAutomataBuilder,
     drunkard::DrunkardsWalkBuilder,
     map::{Map, TileType},
+    maze::MazeBuilder,
 };
 
 pub mod bsp_dungeon;
@@ -20,6 +21,7 @@ pub mod bsp_interior;
 pub mod cellular_automata;
 pub mod drunkard;
 pub mod map;
+pub mod maze;
 
 pub trait MapBuilder {
     fn build_map(&mut self, rng: &mut RandomNumberGenerator);
@@ -29,14 +31,15 @@ pub trait MapBuilder {
 }
 
 pub fn random_builder(new_depth: u32, rng: &mut RandomNumberGenerator) -> Box<dyn MapBuilder> {
-    let builder_idx = rng.roll_dice(1, 6);
+    let builder_idx = rng.roll_dice(1, 7);
     match builder_idx {
         1 => Box::new(BspDungeonBuilder::new(new_depth)),
         2 => Box::new(BspInteriorBuilder::new(new_depth)),
         3 => Box::new(CellularAutomataBuilder::new(new_depth)),
         4 => Box::new(DrunkardsWalkBuilder::open_area(new_depth)),
         5 => Box::new(DrunkardsWalkBuilder::open_halls(new_depth)),
-        _ => Box::new(DrunkardsWalkBuilder::winding_passages(new_depth)),
+        6 => Box::new(DrunkardsWalkBuilder::winding_passages(new_depth)),
+        _ => Box::new(MazeBuilder::new(new_depth)),
     }
 }
 
@@ -74,7 +77,7 @@ pub fn apply_vertical_tunnel(map: &mut Map, y1: u16, y2: u16, x: u16) {
 pub fn remove_unreachable_areas(map: &mut Map, start_idx: usize) -> usize {
     map.populate_blocked();
     let poi: Vec<usize> = vec![start_idx];
-    let dijkstra_map = rltk::DijkstraMap::new(map.width, map.height, &poi, map, 200.0);
+    let dijkstra_map = rltk::DijkstraMap::new(map.width, map.height, &poi, map, 300.0);
     let (mut exit_idx, mut exit_distance) = (start_idx, 0.0f32);
     for (i, tile) in map.tiles.iter_mut().enumerate() {
         if *tile != TileType::Floor {

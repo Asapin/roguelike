@@ -136,10 +136,6 @@ impl MapBuilder for DrunkardsWalkBuilder {
         let exit_idx = remove_unreachable_areas(&mut self.map, start_idx);
         self.map.tiles[exit_idx] = TileType::DownStairs;
         self.noise_areas = generate_voronoi_spawn_regions(&self.map, rng);
-
-        for tile in self.map.revealed_tiles.iter_mut() {
-            *tile = true;
-        }
     }
 
     fn spawn_entities(&mut self, ecs: &mut specs::World) {
