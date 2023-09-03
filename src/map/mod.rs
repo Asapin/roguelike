@@ -11,6 +11,7 @@ use self::{
     bsp_dungeon::BspDungeonBuilder,
     bsp_interior::BspInteriorBuilder,
     cellular_automata::CellularAutomataBuilder,
+    dla::DLABuilder,
     drunkard::DrunkardsWalkBuilder,
     map::{Map, TileType},
     maze::MazeBuilder,
@@ -19,6 +20,7 @@ use self::{
 pub mod bsp_dungeon;
 pub mod bsp_interior;
 pub mod cellular_automata;
+pub mod dla;
 pub mod drunkard;
 pub mod map;
 pub mod maze;
@@ -31,7 +33,7 @@ pub trait MapBuilder {
 }
 
 pub fn random_builder(new_depth: u32, rng: &mut RandomNumberGenerator) -> Box<dyn MapBuilder> {
-    let builder_idx = rng.roll_dice(1, 7);
+    let builder_idx = rng.roll_dice(1, 11);
     match builder_idx {
         1 => Box::new(BspDungeonBuilder::new(new_depth)),
         2 => Box::new(BspInteriorBuilder::new(new_depth)),
@@ -39,7 +41,11 @@ pub fn random_builder(new_depth: u32, rng: &mut RandomNumberGenerator) -> Box<dy
         4 => Box::new(DrunkardsWalkBuilder::open_area(new_depth)),
         5 => Box::new(DrunkardsWalkBuilder::open_halls(new_depth)),
         6 => Box::new(DrunkardsWalkBuilder::winding_passages(new_depth)),
-        _ => Box::new(MazeBuilder::new(new_depth)),
+        7 => Box::new(MazeBuilder::new(new_depth)),
+        8 => Box::new(DLABuilder::new_walk_inwards(new_depth)),
+        9 => Box::new(DLABuilder::new_walk_outwards(new_depth)),
+        10 => Box::new(DLABuilder::new_central_attractor(new_depth)),
+        _ => Box::new(DLABuilder::insectoid(new_depth)),
     }
 }
 

@@ -22,7 +22,7 @@ enum Direction {
     TOP,
     RIGHT,
     BOTTOM,
-    LEFT
+    LEFT,
 }
 
 struct Cell {
@@ -47,7 +47,7 @@ impl Cell {
             Direction::TOP => self.walls[0] = false,
             Direction::RIGHT => self.walls[1] = false,
             Direction::BOTTOM => self.walls[2] = false,
-            Direction::LEFT => self.walls[3] = false
+            Direction::LEFT => self.walls[3] = false,
         }
     }
 
@@ -56,7 +56,7 @@ impl Cell {
             Direction::TOP => self.walls[2] = false,
             Direction::RIGHT => self.walls[3] = false,
             Direction::BOTTOM => self.walls[0] = false,
-            Direction::LEFT => self.walls[1] = false
+            Direction::LEFT => self.walls[1] = false,
         }
     }
 }
@@ -223,8 +223,13 @@ impl MapBuilder for MazeBuilder {
 
         let y = start_idx / grid_width as usize;
         let x = start_idx - y * grid_width as usize;
-        self.starting_position = Position { x: x as u16 * 2 + 1, y: y as u16 * 2 + 1 };
-        let start_idx = self.map.index_from_xy(self.starting_position.x, self.starting_position.y);
+        self.starting_position = Position {
+            x: x as u16 * 2 + 1,
+            y: y as u16 * 2 + 1,
+        };
+        let start_idx = self
+            .map
+            .index_from_xy(self.starting_position.x, self.starting_position.y);
 
         // Find all tiles we can reach from the starting point
         let exit_tile = remove_unreachable_areas(&mut self.map, start_idx);
