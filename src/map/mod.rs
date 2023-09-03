@@ -14,16 +14,17 @@ use self::{
     dla::DLABuilder,
     drunkard::DrunkardsWalkBuilder,
     map::{Map, TileType},
-    maze::MazeBuilder,
+    maze::MazeBuilder, voronoi::VoronoiBuilder,
 };
 
-pub mod bsp_dungeon;
-pub mod bsp_interior;
-pub mod cellular_automata;
-pub mod dla;
-pub mod drunkard;
+mod bsp_dungeon;
+mod bsp_interior;
+mod cellular_automata;
+mod dla;
+mod drunkard;
 pub mod map;
-pub mod maze;
+mod maze;
+mod voronoi;
 
 pub enum Symmetry {
     None,
@@ -40,7 +41,7 @@ pub trait MapBuilder {
 }
 
 pub fn random_builder(new_depth: u32, rng: &mut RandomNumberGenerator) -> Box<dyn MapBuilder> {
-    let builder_idx = rng.roll_dice(1, 13);
+    let builder_idx = rng.roll_dice(1, 14);
     match builder_idx {
         1 => Box::new(BspDungeonBuilder::new(new_depth)),
         2 => Box::new(BspInteriorBuilder::new(new_depth)),
@@ -54,7 +55,10 @@ pub fn random_builder(new_depth: u32, rng: &mut RandomNumberGenerator) -> Box<dy
         10 => Box::new(DLABuilder::new_walk_inwards(new_depth)),
         11 => Box::new(DLABuilder::new_walk_outwards(new_depth)),
         12 => Box::new(DLABuilder::new_central_attractor(new_depth)),
-        _ => Box::new(DLABuilder::insectoid(new_depth)),
+        13 => Box::new(DLABuilder::insectoid(new_depth)),
+        14 => Box::new(VoronoiBuilder::pythagoras(new_depth)),
+        15 => Box::new(VoronoiBuilder::manhattan(new_depth)),
+        _ => Box::new(VoronoiBuilder::chebyshev(new_depth)),
     }
 }
 
