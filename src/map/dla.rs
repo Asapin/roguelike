@@ -7,7 +7,7 @@ use crate::{components::Position, spawn::spawner::spawn_region};
 use super::{
     generate_voronoi_spawn_regions,
     map::{Map, TileType},
-    remove_unreachable_areas, MapBuilder,
+    paint, remove_unreachable_areas, MapBuilder, Symmetry,
 };
 
 const MAX_ENTITIES: u16 = 4;
@@ -18,20 +18,13 @@ pub enum DLAAlgorithm {
     CentralAttractor,
 }
 
-pub enum DLASymmetry {
-    None,
-    Horizontal,
-    Vertical,
-    Both,
-}
-
 pub struct DLABuilder {
     map: Map,
     starting_position: Position,
     noise_areas: HashMap<i32, Vec<usize>>,
     algorithm: DLAAlgorithm,
     brush_size: u16,
-    symmetry: DLASymmetry,
+    symmetry: Symmetry,
     floor_percent: f32,
 }
 
@@ -104,7 +97,7 @@ impl DLABuilder {
             noise_areas: HashMap::new(),
             algorithm: DLAAlgorithm::WalkInwards,
             brush_size: 1,
-            symmetry: DLASymmetry::None,
+            symmetry: Symmetry::None,
             floor_percent: 0.25,
         }
     }
@@ -116,7 +109,7 @@ impl DLABuilder {
             noise_areas: HashMap::new(),
             algorithm: DLAAlgorithm::WalkOutwards,
             brush_size: 2,
-            symmetry: DLASymmetry::None,
+            symmetry: Symmetry::None,
             floor_percent: 0.25,
         }
     }
@@ -128,7 +121,7 @@ impl DLABuilder {
             noise_areas: HashMap::new(),
             algorithm: DLAAlgorithm::CentralAttractor,
             brush_size: 2,
-            symmetry: DLASymmetry::None,
+            symmetry: Symmetry::None,
             floor_percent: 0.25,
         }
     }
@@ -140,72 +133,8 @@ impl DLABuilder {
             noise_areas: HashMap::new(),
             algorithm: DLAAlgorithm::CentralAttractor,
             brush_size: 2,
-            symmetry: DLASymmetry::Horizontal,
+            symmetry: Symmetry::Horizontal,
             floor_percent: 0.25,
-        }
-    }
-
-    fn paint(&mut self, x: u16, y: u16) {
-        match self.symmetry {
-            DLASymmetry::None => self.apply_paint(x, y),
-            DLASymmetry::Horizontal => {
-                let center_x = self.map.width / 2;
-                if x == center_x {
-                    self.apply_paint(x, y);
-                } else {
-                    let dist_x = i32::abs(center_x as i32 - x as i32) as u16;
-                    self.apply_paint(center_x + dist_x, y);
-                    self.apply_paint(center_x - dist_x, y);
-                }
-            }
-            DLASymmetry::Vertical => {
-                let center_y = self.map.height / 2;
-                if y == center_y {
-                    self.apply_paint(x, y);
-                } else {
-                    let dist_y = i32::abs(center_y as i32 - y as i32) as u16;
-                    self.apply_paint(x, center_y + dist_y);
-                    self.apply_paint(x, center_y - dist_y);
-                }
-            }
-            DLASymmetry::Both => {
-                let center_x = self.map.width / 2;
-                let center_y = self.map.height / 2;
-                if x == center_x && y == center_y {
-                    self.apply_paint(x, y);
-                } else {
-                    let dist_x = i32::abs(center_x as i32 - x as i32) as u16;
-                    let dist_y = i32::abs(center_y as i32 - y as i32) as u16;
-                    self.apply_paint(center_x + dist_x, y);
-                    self.apply_paint(center_x - dist_x, y);
-                    self.apply_paint(x, center_y + dist_y);
-                    self.apply_paint(x, center_y - dist_y);
-                }
-            }
-        }
-    }
-
-    fn apply_paint(&mut self, x: u16, y: u16) {
-        match self.brush_size {
-            1 => {
-                let digger_idx = self.map.index_from_xy(x, y);
-                self.map.tiles[digger_idx] = TileType::Floor;
-            }
-            _ => {
-                let half_brush_size = self.brush_size / 2;
-                for brush_y in y - half_brush_size..y + half_brush_size {
-                    for brush_x in x - half_brush_size..x + half_brush_size {
-                        if brush_x > 1
-                            && brush_x < self.map.width - 1
-                            && brush_y > 1
-                            && brush_y < self.map.height - 1
-                        {
-                            let idx = self.map.index_from_xy(brush_x, brush_y);
-                            self.map.tiles[idx] = TileType::Floor;
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -221,7 +150,13 @@ impl DLABuilder {
             (digger_x, digger_y) = self.random_stagger(rng, digger_x, digger_y);
             digger_idx = self.map.index_from_xy(digger_x, digger_y);
         }
-        self.paint(prev_x, prev_y);
+        paint(
+            &mut self.map,
+            &self.symmetry,
+            self.brush_size,
+            prev_x,
+            prev_y,
+        );
     }
 
     fn walk_outwards(&mut self, rng: &mut RandomNumberGenerator) {
@@ -232,7 +167,13 @@ impl DLABuilder {
             (digger_x, digger_y) = self.random_stagger(rng, digger_x, digger_y);
             digger_idx = self.map.index_from_xy(digger_x, digger_y);
         }
-        self.paint(digger_x, digger_y);
+        paint(
+            &mut self.map,
+            &self.symmetry,
+            self.brush_size,
+            digger_x,
+            digger_y,
+        );
     }
 
     fn central_attractor(&mut self, rng: &mut RandomNumberGenerator) {
@@ -256,7 +197,13 @@ impl DLABuilder {
             path.remove(0);
             digger_idx = self.map.index_from_xy(digger_x, digger_y);
         }
-        self.paint(prev_x, prev_y);
+        paint(
+            &mut self.map,
+            &self.symmetry,
+            self.brush_size,
+            prev_x,
+            prev_y,
+        );
     }
 
     fn random_stagger(
