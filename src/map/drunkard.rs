@@ -7,7 +7,7 @@ use crate::{components::Position, spawn::spawner::spawn_region};
 use super::{
     generate_voronoi_spawn_regions,
     map::{Map, TileType},
-    remove_unreachable_areas, MapBuilder, Symmetry, paint,
+    paint, remove_unreachable_areas, MapBuilder, Symmetry,
 };
 
 const MAX_ENTITIES: u16 = 4;
@@ -23,7 +23,7 @@ pub struct DrunkardSettings {
     pub drunken_lifetime: i32,
     pub floor_percent: f32,
     pub brush_size: u16,
-    pub symmetry: Symmetry
+    pub symmetry: Symmetry,
 }
 
 pub struct DrunkardsWalkBuilder {
@@ -90,7 +90,13 @@ impl MapBuilder for DrunkardsWalkBuilder {
                 if self.map.tiles[drunk_idx] == TileType::Wall {
                     did_something = true;
                 }
-                paint(&mut self.map, &self.settings.symmetry, self.settings.brush_size, drunk_x, drunk_y);
+                paint(
+                    &mut self.map,
+                    &self.settings.symmetry,
+                    self.settings.brush_size,
+                    drunk_x,
+                    drunk_y,
+                );
 
                 match rng.roll_dice(1, 4) {
                     1 => {
@@ -158,7 +164,7 @@ impl DrunkardsWalkBuilder {
                 drunken_lifetime: 400,
                 floor_percent: 0.5,
                 brush_size: 1,
-                symmetry: Symmetry::None
+                symmetry: Symmetry::None,
             },
         }
     }
@@ -173,7 +179,7 @@ impl DrunkardsWalkBuilder {
                 drunken_lifetime: 400,
                 floor_percent: 0.5,
                 brush_size: 1,
-                symmetry: Symmetry::None
+                symmetry: Symmetry::None,
             },
         }
     }
@@ -188,7 +194,7 @@ impl DrunkardsWalkBuilder {
                 drunken_lifetime: 100,
                 floor_percent: 0.4,
                 brush_size: 1,
-                symmetry: Symmetry::None
+                symmetry: Symmetry::None,
             },
         }
     }
@@ -203,8 +209,8 @@ impl DrunkardsWalkBuilder {
                 drunken_lifetime: 100,
                 floor_percent: 0.4,
                 brush_size: 2,
-                symmetry: Symmetry::None
-            }
+                symmetry: Symmetry::None,
+            },
         }
     }
 
@@ -218,8 +224,8 @@ impl DrunkardsWalkBuilder {
                 drunken_lifetime: 100,
                 floor_percent: 0.4,
                 brush_size: 1,
-                symmetry: Symmetry::Both
-            }
+                symmetry: Symmetry::Both,
+            },
         }
     }
 }

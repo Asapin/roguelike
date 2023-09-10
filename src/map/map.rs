@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, fs::File, io::Write};
 
 use rltk::{Algorithm2D, BaseMap, FontCharType, Point};
 use serde::{Deserialize, Serialize};
@@ -9,7 +9,7 @@ pub const WINDOW_HEIGHT: u16 = 50;
 pub const MAP_WIDTH: u16 = 80;
 pub const MAP_HEIGHT: u16 = 43;
 
-#[derive(PartialEq, Clone, Copy, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Copy, Serialize, Deserialize, Eq, Hash)]
 pub enum TileType {
     Wall,
     Floor,
@@ -120,6 +120,29 @@ impl Map {
     fn is_revealed_and_wall(&self, x: u16, y: u16) -> bool {
         let idx = self.index_from_xy(x, y);
         self.tiles[idx] == TileType::Wall && self.revealed_tiles[idx]
+    }
+
+    pub fn dump_to_file(&self, path: &str) {
+        let mut output = match File::create(path) {
+            Ok(file) => file,
+            Err(e) => {
+                rltk::console::log(format!("Couldn't create map dump: {}", e.to_string()));
+                return;
+            }
+        };
+
+        for y in 0..self.height {
+            let mut line = String::new();
+            for x in 0..self.width {
+                let tile_idx = self.index_from_xy(x, y);
+                line += match self.tiles[tile_idx] {
+                    TileType::DownStairs => ">",
+                    TileType::Floor => ".",
+                    TileType::Wall => "#",
+                };
+            }
+            let _ = writeln!(output, "{}", line);
+        }
     }
 }
 

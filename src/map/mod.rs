@@ -14,7 +14,9 @@ use self::{
     dla::DLABuilder,
     drunkard::DrunkardsWalkBuilder,
     map::{Map, TileType},
-    maze::MazeBuilder, voronoi::VoronoiBuilder,
+    maze::MazeBuilder,
+    voronoi::VoronoiBuilder,
+    wfc::WaveformCollapseBuilder,
 };
 
 mod bsp_dungeon;
@@ -25,6 +27,7 @@ mod drunkard;
 pub mod map;
 mod maze;
 mod voronoi;
+mod wfc;
 
 pub enum Symmetry {
     None,
@@ -41,7 +44,7 @@ pub trait MapBuilder {
 }
 
 pub fn random_builder(new_depth: u32, rng: &mut RandomNumberGenerator) -> Box<dyn MapBuilder> {
-    let builder_idx = rng.roll_dice(1, 14);
+    let builder_idx = rng.roll_dice(1, 17);
     match builder_idx {
         1 => Box::new(BspDungeonBuilder::new(new_depth)),
         2 => Box::new(BspInteriorBuilder::new(new_depth)),
@@ -58,7 +61,8 @@ pub fn random_builder(new_depth: u32, rng: &mut RandomNumberGenerator) -> Box<dy
         13 => Box::new(DLABuilder::insectoid(new_depth)),
         14 => Box::new(VoronoiBuilder::pythagoras(new_depth)),
         15 => Box::new(VoronoiBuilder::manhattan(new_depth)),
-        _ => Box::new(VoronoiBuilder::chebyshev(new_depth)),
+        16 => Box::new(VoronoiBuilder::chebyshev(new_depth)),
+        _ => Box::new(WaveformCollapseBuilder::from_manual_tiles(new_depth)),
     }
 }
 
@@ -180,10 +184,10 @@ pub fn paint(map: &mut Map, mode: &Symmetry, brush_size: u16, x: u16, y: u16) {
             } else {
                 let dist_x = i32::abs(center_x as i32 - x as i32) as u16;
                 let dist_y = i32::abs(center_y as i32 - y as i32) as u16;
-                apply_paint(map, brush_size, center_x + dist_x, y);
-                apply_paint(map, brush_size, center_x - dist_x, y);
-                apply_paint(map, brush_size, x, center_y + dist_y);
-                apply_paint(map, brush_size, x, center_y - dist_y);
+                apply_paint(map, brush_size, center_x + dist_x, center_y + dist_y);
+                apply_paint(map, brush_size, center_x - dist_x, center_y - dist_y);
+                apply_paint(map, brush_size, center_x - dist_x, center_y + dist_y);
+                apply_paint(map, brush_size, center_x + dist_x, center_y - dist_y);
             }
         }
     }

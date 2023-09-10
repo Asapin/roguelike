@@ -1,17 +1,21 @@
 use std::collections::HashMap;
 
-use rltk::{RandomNumberGenerator, Point};
+use rltk::{Point, RandomNumberGenerator};
 
 use crate::{components::Position, spawn::spawner::spawn_region};
 
-use super::{map::{Map, TileType}, MapBuilder, remove_unreachable_areas, generate_voronoi_spawn_regions};
+use super::{
+    generate_voronoi_spawn_regions,
+    map::{Map, TileType},
+    remove_unreachable_areas, MapBuilder,
+};
 
 const MAX_ENTITIES: u16 = 4;
 
 pub enum DistanceAlgorithm {
     Pythagoras,
     Manhattan,
-    Chebyshev
+    Chebyshev,
 }
 
 pub struct VoronoiBuilder {
@@ -19,7 +23,7 @@ pub struct VoronoiBuilder {
     starting_position: Position,
     noise_areas: HashMap<i32, Vec<usize>>,
     n_seeds: usize,
-    distance_algorith: DistanceAlgorithm
+    distance_algorith: DistanceAlgorithm,
 }
 
 impl MapBuilder for VoronoiBuilder {
@@ -33,7 +37,8 @@ impl MapBuilder for VoronoiBuilder {
 
     fn build_map(&mut self, rng: &mut rltk::RandomNumberGenerator) {
         let voronoi_seeds = self.build_seeds(rng);
-        let mut voronoi_membership: Vec<usize> = vec![0; self.map.width as usize * self.map.height as usize];
+        let mut voronoi_membership: Vec<usize> =
+            vec![0; self.map.width as usize * self.map.height as usize];
         for (i, vid) in voronoi_membership.iter_mut().enumerate() {
             let x = i % self.map.width as usize;
             let y = i / self.map.width as usize;
@@ -57,10 +62,18 @@ impl MapBuilder for VoronoiBuilder {
                 let mut neighbors = 0;
                 let my_idx = self.map.index_from_xy(x, y);
                 let my_seed = voronoi_membership[my_idx];
-                if voronoi_membership[self.map.index_from_xy(x - 1, y)] != my_seed { neighbors += 1; }
-                if voronoi_membership[self.map.index_from_xy(x + 1, y)] != my_seed { neighbors += 1; }
-                if voronoi_membership[self.map.index_from_xy(x, y - 1)] != my_seed { neighbors += 1; }
-                if voronoi_membership[self.map.index_from_xy(x, y + 1)] != my_seed { neighbors += 1; }
+                if voronoi_membership[self.map.index_from_xy(x - 1, y)] != my_seed {
+                    neighbors += 1;
+                }
+                if voronoi_membership[self.map.index_from_xy(x + 1, y)] != my_seed {
+                    neighbors += 1;
+                }
+                if voronoi_membership[self.map.index_from_xy(x, y - 1)] != my_seed {
+                    neighbors += 1;
+                }
+                if voronoi_membership[self.map.index_from_xy(x, y + 1)] != my_seed {
+                    neighbors += 1;
+                }
 
                 if neighbors < 2 {
                     self.map.tiles[my_idx] = TileType::Floor;
@@ -95,7 +108,7 @@ impl VoronoiBuilder {
             starting_position: Position { x: 0, y: 0 },
             noise_areas: HashMap::new(),
             n_seeds: 64,
-            distance_algorith: DistanceAlgorithm::Pythagoras
+            distance_algorith: DistanceAlgorithm::Pythagoras,
         }
     }
 
@@ -105,7 +118,7 @@ impl VoronoiBuilder {
             starting_position: Position { x: 0, y: 0 },
             noise_areas: HashMap::new(),
             n_seeds: 64,
-            distance_algorith: DistanceAlgorithm::Manhattan
+            distance_algorith: DistanceAlgorithm::Manhattan,
         }
     }
 
@@ -115,7 +128,7 @@ impl VoronoiBuilder {
             starting_position: Position { x: 0, y: 0 },
             noise_areas: HashMap::new(),
             n_seeds: 64,
-            distance_algorith: DistanceAlgorithm::Chebyshev
+            distance_algorith: DistanceAlgorithm::Chebyshev,
         }
     }
 
@@ -136,9 +149,11 @@ impl VoronoiBuilder {
 
     fn distance(&self, start: Point, end: Point) -> f32 {
         match self.distance_algorith {
-            DistanceAlgorithm::Pythagoras => rltk::DistanceAlg::PythagorasSquared.distance2d(start, end),
+            DistanceAlgorithm::Pythagoras => {
+                rltk::DistanceAlg::PythagorasSquared.distance2d(start, end)
+            }
             DistanceAlgorithm::Manhattan => rltk::DistanceAlg::Manhattan.distance2d(start, end),
-            DistanceAlgorithm::Chebyshev => rltk::DistanceAlg::Chebyshev.distance2d(start, end)
+            DistanceAlgorithm::Chebyshev => rltk::DistanceAlg::Chebyshev.distance2d(start, end),
         }
     }
 }
